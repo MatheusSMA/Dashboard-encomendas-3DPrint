@@ -63,8 +63,8 @@
 
         /* Botões pequenos de quantidade */
         .qty-btn {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -73,6 +73,7 @@
             cursor: pointer;
             background-color: #e5e7eb;
             color: #374151;
+            user-select: none;
         }
 
         .qty-btn:hover {
@@ -107,29 +108,29 @@
                         </span>
                     </div>
                 </div>
-                <div class="flex space-x-2 sm:space-x-8 overflow-x-auto">
+                <div class="flex space-x-2 sm:space-x-8 overflow-x-auto no-scrollbar">
                     <button onclick="switchTab('sales')" id="tab-sales"
-                        class="tab-active py-4 px-2 transition-colors flex items-center gap-2 text-sm sm:text-base">
+                        class="tab-active py-4 px-2 transition-colors flex items-center gap-2 text-sm sm:text-base whitespace-nowrap">
                         <i class="fas fa-cash-register"></i> <span class="hidden sm:inline">Vendas</span>
                     </button>
                     <button onclick="switchTab('models')" id="tab-models"
-                        class="tab-inactive py-4 px-2 transition-colors flex items-center gap-2 text-sm sm:text-base">
+                        class="tab-inactive py-4 px-2 transition-colors flex items-center gap-2 text-sm sm:text-base whitespace-nowrap">
                         <i class="fas fa-shapes"></i> <span class="hidden sm:inline">Modelos</span>
                     </button>
                     <button onclick="switchTab('dashboard')" id="tab-dashboard"
-                        class="tab-inactive py-4 px-2 transition-colors flex items-center gap-2 text-sm sm:text-base">
+                        class="tab-inactive py-4 px-2 transition-colors flex items-center gap-2 text-sm sm:text-base whitespace-nowrap">
                         <i class="fas fa-chart-pie"></i> <span class="hidden sm:inline">Gráficos</span>
                     </button>
                     <button onclick="switchTab('settings')" id="tab-settings"
-                        class="tab-inactive py-4 px-2 transition-colors flex items-center gap-2 text-sm sm:text-base">
-                        <i class="fas fa-cloud"></i> <span class="hidden sm:inline">Nuvem</span>
+                        class="tab-inactive py-4 px-2 transition-colors flex items-center gap-2 text-sm sm:text-base whitespace-nowrap">
+                        <i class="fas fa-save"></i> <span class="hidden sm:inline">Dados</span>
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-6xl mx-auto w-full p-6 flex-grow">
+    <div class="max-w-6xl mx-auto w-full p-4 sm:p-6 flex-grow">
 
         <!-- ======================= VIEW: VENDAS ======================= -->
         <div id="view-sales" class="view-section">
@@ -139,23 +140,23 @@
                     <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2"><i
                                 class="fas fa-cart-plus mr-2 text-blue-600"></i>Nova Venda</h2>
-                        <div class="space-y-3">
+                        <div class="space-y-4">
                             <!-- Cliente -->
                             <div>
-                                <label class="text-xs font-bold text-gray-500">Cliente</label>
+                                <label class="text-xs font-bold text-gray-500 block mb-1">Cliente</label>
                                 <div class="relative">
-                                    <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-gray-400"><i
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i
                                             class="fas fa-user"></i></span>
                                     <input type="text" id="saleCustomer" list="customerList"
                                         placeholder="Nome do Cliente (opcional)"
-                                        class="w-full pl-8 p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                                        class="w-full pl-9 p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                                     <datalist id="customerList"></datalist>
                                 </div>
                             </div>
 
                             <!-- Produto -->
                             <div>
-                                <label class="text-xs font-bold text-gray-500">Modelo / Produto</label>
+                                <label class="text-xs font-bold text-gray-500 block mb-1">Modelo / Produto</label>
                                 <select id="productDropdown" onchange="updateSaleInput()"
                                     class="w-full p-2 border rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
                                     <option value="">Carregando...</option>
@@ -163,21 +164,22 @@
                             </div>
 
                             <!-- Qtd e Preço -->
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="text-xs font-bold text-gray-500">Quantidade</label>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1">Qtd</label>
                                     <input type="number" id="saleQty" value="1" min="1"
                                         class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none text-center">
                                 </div>
                                 <div>
-                                    <label class="text-xs font-bold text-gray-500">Preço Unit. (R$)</label>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1">Preço Vendido
+                                        (Unit.)</label>
                                     <input type="number" id="finalSalePrice" step="0.01" placeholder="0,00"
                                         class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none bg-white font-bold text-gray-700">
                                 </div>
                             </div>
 
                             <button onclick="addSale()"
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition shadow-md flex justify-center items-center gap-2">
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition shadow-md flex justify-center items-center gap-2 mt-2">
                                 <i class="fas fa-plus"></i> Registrar Venda
                             </button>
                         </div>
@@ -189,24 +191,33 @@
                             class="absolute top-0 right-0 bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg uppercase">
                             Simulação Rápida</div>
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2 text-sm"><i
-                                class="fas fa-calculator mr-2 text-yellow-600"></i>Calculadora</h2>
-                        <div class="space-y-2 text-sm">
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="number" id="calcWeight" placeholder="Peso (g)"
-                                    class="w-full p-1 border rounded text-center text-xs" oninput="calculateCost()">
-                                <div class="flex gap-1 items-center">
-                                    <input type="number" id="timeH" placeholder="H"
-                                        class="w-full p-1 border rounded text-center text-xs" oninput="calculateCost()">
-                                    <input type="number" id="timeM" placeholder="M"
-                                        class="w-full p-1 border rounded text-center text-xs" oninput="calculateCost()">
-                                    <input type="number" id="timeS" placeholder="S"
-                                        class="w-full p-1 border rounded text-center text-xs" oninput="calculateCost()">
+                                class="fas fa-calculator mr-2 text-yellow-600"></i>Calculadora de Custo</h2>
+                        <div class="space-y-3 text-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-1">Peso (g)</label>
+                                    <input type="number" id="calcWeight" placeholder="Ex: 45"
+                                        class="w-full p-2 border rounded text-center text-sm" oninput="calculateCost()">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-1">Tempo (H:M:S)</label>
+                                    <div class="flex gap-1 items-center">
+                                        <input type="number" id="timeH" placeholder="H"
+                                            class="w-full p-2 border rounded text-center text-sm"
+                                            oninput="calculateCost()">
+                                        <input type="number" id="timeM" placeholder="M"
+                                            class="w-full p-2 border rounded text-center text-sm"
+                                            oninput="calculateCost()">
+                                        <input type="number" id="timeS" placeholder="S"
+                                            class="w-full p-2 border rounded text-center text-sm"
+                                            oninput="calculateCost()">
+                                    </div>
                                 </div>
                             </div>
                             <div
-                                class="bg-yellow-50 p-2 rounded border border-yellow-100 flex justify-between items-center">
-                                <span class="text-xs text-gray-500">Custo Unit.:</span>
-                                <span id="displayTotalCost" class="font-bold text-red-600">R$ 0,00</span>
+                                class="bg-yellow-50 p-3 rounded border border-yellow-100 flex justify-between items-center">
+                                <span class="text-xs text-gray-500 font-bold">Custo Estimado Unit.:</span>
+                                <span id="displayTotalCost" class="font-bold text-red-600 text-lg">R$ 0,00</span>
                             </div>
                             <button onclick="transferCostToModel()"
                                 class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded text-xs transition shadow-sm flex justify-center items-center gap-2">
@@ -214,7 +225,7 @@
                             </button>
                             <button onclick="switchTab('models')"
                                 class="w-full text-[10px] text-gray-400 hover:text-gray-600 text-center mt-1">Configurar
-                                Parâmetros</button>
+                                Parâmetros (Energia/Filamento)</button>
                         </div>
                     </div>
                 </div>
@@ -230,7 +241,7 @@
                                     <i class="fas fa-users"></i> Agrupar por Cliente
                                 </button>
                             </div>
-                            <div class="text-right">
+                            <div class="text-right w-full sm:w-auto">
                                 <span class="text-xs text-gray-500 block">Lucro Recebido Total</span>
                                 <span id="totalProfitDisplay" class="font-bold text-green-600 text-lg">R$ 0,00</span>
                             </div>
@@ -263,18 +274,19 @@
                         <input type="hidden" id="editModelId">
                         <div class="space-y-4">
                             <div>
-                                <label class="text-xs font-bold text-gray-500">Nome do Modelo</label>
+                                <label class="text-xs font-bold text-gray-500 block mb-1">Nome do Modelo</label>
                                 <input type="text" id="regProdName" placeholder="Ex: Charmander"
                                     class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="text-xs font-bold text-gray-500">Custo (R$)</label>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1">Custo (R$)</label>
                                     <input type="number" id="regProdCost" step="0.01" placeholder="0,00"
                                         class="w-full p-2 border rounded bg-gray-50 outline-none">
                                 </div>
                                 <div>
-                                    <label class="text-xs font-bold text-gray-500">Venda (R$)</label>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1">Venda Sugerida
+                                        (R$)</label>
                                     <input type="number" id="regProdPrice" step="0.01" placeholder="0,00"
                                         class="w-full p-2 border rounded outline-none">
                                 </div>
@@ -361,45 +373,27 @@
         <!-- ======================= VIEW: CONFIG/CLOUD ======================= -->
         <div id="view-settings" class="view-section hidden">
             <div class="max-w-2xl mx-auto space-y-6">
-                <div class="bg-white p-6 rounded-lg shadow border-2 border-green-100 relative">
-                    <div
-                        class="absolute top-0 right-0 bg-green-100 text-green-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg uppercase">
-                        Auto-Sync</div>
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="bg-green-600 text-white p-3 rounded-full"><i
-                                class="fab fa-google-drive text-xl"></i></div>
-                        <div>
-                            <h2 class="font-bold text-lg text-gray-800">Google Sheets</h2>
-                        </div>
-                    </div>
-                    <div class="space-y-4">
-                        <input type="text" id="cloudUrl" placeholder="Cole a URL do Script (App Web)"
-                            class="w-full p-2 border rounded text-sm bg-gray-50">
-                        <div class="flex justify-end gap-2">
-                            <button onclick="saveData()"
-                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition text-sm">Salvar
-                                & Testar</button>
-                            <button onclick="syncFromCloud(false)"
-                                class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition text-sm">Forçar
-                                Download</button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Seção de Nuvem oculta/hardcoded, mantendo apenas o aviso visual se necessário ou simplificando -->
+
                 <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
                     <h2 class="font-bold text-lg text-gray-800 mb-4"><i class="fas fa-hdd mr-2"></i>Backup Manual</h2>
+                    <p class="text-sm text-gray-500 mb-4">Salvar uma cópia de segurança dos seus dados no computador.
+                    </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <button onclick="exportData()"
-                            class="w-full bg-gray-800 text-white font-bold py-2 rounded text-sm">Baixar JSON</button>
+                            class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 rounded text-sm">Baixar
+                            Arquivo JSON</button>
                         <div class="relative">
                             <input type="file" id="importFile" accept=".json"
                                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 onchange="importData()" />
                             <button
-                                class="w-full bg-gray-200 text-gray-800 font-bold py-2 rounded text-sm pointer-events-none">Restaurar
-                                JSON</button>
+                                class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded text-sm pointer-events-none">Restaurar
+                                de Arquivo</button>
                         </div>
                     </div>
                 </div>
+
                 <div class="bg-red-50 p-6 rounded-lg border border-red-200 text-center mt-8">
                     <button onclick="clearAllData()"
                         class="text-red-600 border border-red-600 hover:bg-red-600 hover:text-white font-bold py-2 px-6 rounded transition text-sm">Resetar
@@ -411,26 +405,34 @@
     </div>
 
     <script>
+        // --- CONFIGURAÇÃO ---
+        // COLE SUA URL DO GOOGLE APPS SCRIPT ABAIXO (Mantenha as aspas)
+        const GOOGLE_SHEETS_URL = "";
+
         // --- ESTADO GLOBAL ---
         let products = [];
         let sales = [];
         let settings = { filamentPrice: '', energyRate: '', printerPower: '' };
-        let cloudUrl = localStorage.getItem('3d_cloud_url') || '';
-        let viewMode = 'table'; // 'table' ou 'customer'
+        let cloudUrl = GOOGLE_SHEETS_URL || localStorage.getItem('3d_cloud_url') || '';
+        let viewMode = 'table';
         let chartFinanceInstance = null;
         let chartProductsInstance = null;
 
         // --- INICIALIZAÇÃO ---
         document.addEventListener('DOMContentLoaded', () => {
             loadLocal();
-            // UI Init
-            document.getElementById('cloudUrl').value = cloudUrl;
+
+            // Configs UI
             document.getElementById('cfgFilament').value = settings.filamentPrice;
             document.getElementById('cfgEnergy').value = settings.energyRate;
             document.getElementById('cfgPower').value = settings.printerPower;
 
-            if (cloudUrl) syncFromCloud(true);
-            else refreshUI();
+            // Se tiver URL fixa ou salva, tenta sincronizar
+            if (cloudUrl) {
+                syncFromCloud(true);
+            } else {
+                refreshUI();
+            }
         });
 
         function loadLocal() {
@@ -476,7 +478,6 @@
             });
         }
 
-        // --- RENDERIZADOR DE VENDAS (IMPORTANTE: Lida com os dois modos) ---
         function toggleViewMode() {
             viewMode = (viewMode === 'table') ? 'customer' : 'table';
             const btn = document.getElementById('btnViewMode');
@@ -502,13 +503,12 @@
             document.getElementById('emptyState').classList.add('hidden');
             container.classList.remove('hidden');
 
-            // --- MODO TABELA (FLAT) ---
             if (viewMode === 'table') {
                 let html = `
                 <table class="w-full text-sm text-left text-gray-500 rounded-lg overflow-hidden">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-200 sticky top-0">
                         <tr>
-                            <th class="px-4 py-3">Cliente / Produto</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Cliente / Produto</th>
                             <th class="px-4 py-3 text-center">Qtd</th>
                             <th class="px-4 py-3 text-right">Total</th>
                             <th class="px-4 py-3 text-right">Lucro (Margem)</th>
@@ -528,7 +528,6 @@
                     const profit = priceTotal - cost;
                     const customer = sale.customer || "Consumidor Final";
 
-                    // Cálculo da Margem
                     const margin = priceTotal > 0 ? ((profit / priceTotal) * 100) : 0;
                     let marginColor = 'text-gray-400';
                     if (profit > 0) {
@@ -539,15 +538,13 @@
                     }
 
                     const safeId = String(sale.id).replace(/'/g, "\\'");
-
-                    // Lucro agora é sempre visível, mas com estilo diferente se não pago
                     const profitDisplay = formatMoney(profit);
                     const profitStyle = sale.paid ? 'text-gray-800 font-bold' : 'text-gray-400 italic';
 
                     html += `
                         <tr class="border-b hover:bg-gray-50">
                             <td class="px-4 py-3">
-                                <div class="font-bold text-gray-800 flex items-center gap-1">
+                                <div class="font-bold text-gray-800 flex items-center gap-1 flex-wrap">
                                     ${customer}
                                     <button onclick="editSaleCustomer('${safeId}')" class="text-[10px] text-blue-400 hover:text-blue-600" title="Editar Cliente"><i class="fas fa-pen"></i></button>
                                 </div>
@@ -582,11 +579,7 @@
                 });
                 html += `</tbody></table>`;
                 container.innerHTML = html;
-            }
-
-            // --- MODO CLIENTE (GROUPED) ---
-            else {
-                // Agrupar
+            } else {
                 const groups = {};
                 sales.forEach(sale => {
                     const c = sale.customer || "Outros";
@@ -594,12 +587,10 @@
                     groups[c].push(sale);
                 });
 
-                // Ordenar clientes
                 const sortedCustomers = Object.keys(groups).sort();
 
                 sortedCustomers.forEach(customer => {
                     const groupSales = groups[customer];
-                    // Stats do grupo
                     const totalItems = groupSales.reduce((sum, s) => sum + (parseInt(s.qty) || 1), 0);
                     const totalValue = groupSales.reduce((sum, s) => sum + ((parseFloat(s.price) || 0) * (parseInt(s.qty) || 1)), 0);
                     const pending = groupSales.filter(s => !s.paid).length;
@@ -607,7 +598,6 @@
                     const groupHtml = document.createElement('div');
                     groupHtml.className = "mb-3 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden";
 
-                    // Cabeçalho do Grupo (Acordeão)
                     let headerHtml = `
                         <div onclick="this.parentElement.classList.toggle('group-open')" class="p-4 bg-white cursor-pointer hover:bg-gray-50 flex justify-between items-center select-none">
                             <div class="flex items-center gap-3">
@@ -647,7 +637,6 @@
                         const profit = t - (costUnit * q);
                         const safeId = String(s.id).replace(/'/g, "\\'");
 
-                        // Margem no grupo
                         const margin = t > 0 ? ((profit / t) * 100) : 0;
                         const marginColor = profit > 0 ? 'text-green-600' : 'text-red-500';
 
@@ -684,7 +673,6 @@
             }
         }
 
-        // 2. Tabela de Modelos
         function renderModelsTable() {
             const tbody = document.getElementById('modelsTableBody');
             tbody.innerHTML = '';
@@ -828,7 +816,10 @@
         function updateSaleInput() {
             const id = document.getElementById('productDropdown').value;
             const prod = products.find(p => p.id == id);
-            if (prod) document.getElementById('finalSalePrice').value = (parseFloat(prod.price) || 0).toFixed(2);
+            if (prod) {
+                const unitPrice = parseFloat(prod.price) || 0;
+                document.getElementById('finalSalePrice').value = unitPrice.toFixed(2);
+            }
         }
 
         function resetModelForm() {
@@ -842,18 +833,17 @@
             document.getElementById('btnCancelEdit').classList.add('hidden');
         }
 
-        // --- CALCULADORA ---
         function calculateCost() {
             const weight = parseFloat(document.getElementById('calcWeight').value) || 0;
             const h = parseFloat(document.getElementById('timeH').value) || 0;
             const m = parseFloat(document.getElementById('timeM').value) || 0;
-            const s = parseFloat(document.getElementById('timeS').value) || 0; // Novos segundos
+            const s = parseFloat(document.getElementById('timeS').value) || 0;
             const filPrice = parseFloat(settings.filamentPrice) || 0;
             const enPrice = parseFloat(settings.energyRate) || 0;
             const power = parseFloat(settings.printerPower) || 0;
 
             const matCost = (filPrice / 1000) * weight;
-            const hours = h + (m / 60) + (s / 3600); // Cálculo com segundos
+            const hours = h + (m / 60) + (s / 3600);
             const enCost = ((enPrice * power) / 1000) * hours;
 
             document.getElementById('displayTotalCost').textContent = formatMoney(matCost + enCost);
@@ -887,11 +877,9 @@
             saveData();
         }
 
-        // --- DASHBOARD E KPI (ATUALIZADO COM QTD) ---
         function updateKPIs() {
             const paidSales = sales.filter(s => s.paid);
 
-            // Cálculos considerando quantidade
             let revenue = 0;
             let cost = 0;
             let totalItems = 0;
@@ -960,11 +948,7 @@
             localStorage.setItem('3d_products', JSON.stringify(products));
             localStorage.setItem('3d_sales', JSON.stringify(sales));
             localStorage.setItem('3d_settings', JSON.stringify(settings));
-            const urlInput = document.getElementById('cloudUrl').value.trim();
-            if (urlInput && urlInput !== cloudUrl) {
-                cloudUrl = urlInput;
-                localStorage.setItem('3d_cloud_url', cloudUrl);
-            }
+            // cloudUrl é definido no topo e não muda dinamicamente via UI mais
             if (cloudUrl) syncToCloud(true);
         }
 
