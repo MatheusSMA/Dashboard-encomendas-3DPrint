@@ -274,6 +274,9 @@
                                 class="hidden text-xs text-red-500 hover:underline">Cancelar</button>
                         </h2>
                         <input type="hidden" id="editModelId">
+                        <!-- Campo oculto para armazenar custo de energia unitário -->
+                        <input type="hidden" id="regProdEnergyCost">
+
                         <div class="space-y-4">
                             <div>
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Nome do Modelo</label>
@@ -344,7 +347,7 @@
 
         <!-- ======================= VIEW: DASHBOARD ======================= -->
         <div id="view-dashboard" class="view-section hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
                     <p class="text-xs text-gray-500 uppercase font-bold">Faturamento</p>
                     <p id="kpiRevenue" class="text-2xl font-bold text-gray-800">R$ 0,00</p>
@@ -356,6 +359,11 @@
                 <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-400">
                     <p class="text-xs text-gray-500 uppercase font-bold">Custos</p>
                     <p id="kpiCost" class="text-2xl font-bold text-red-500">R$ 0,00</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
+                    <p class="text-xs text-gray-500 uppercase font-bold">Energia (Est.)</p>
+                    <p id="kpiEnergy" class="text-xl font-bold text-yellow-600">R$ 0,00</p>
+                    <p id="kpiEnergyKwh" class="text-[10px] text-gray-400">0 kWh</p>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
                     <p class="text-xs text-gray-500 uppercase font-bold">Vendas (Itens)</p>
@@ -375,8 +383,6 @@
         <!-- ======================= VIEW: CONFIG/CLOUD ======================= -->
         <div id="view-settings" class="view-section hidden">
             <div class="max-w-2xl mx-auto space-y-6">
-                <!-- Seção de Nuvem oculta/hardcoded, mantendo apenas o aviso visual se necessário ou simplificando -->
-
                 <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
                     <h2 class="font-bold text-lg text-gray-800 mb-4"><i class="fas fa-hdd mr-2"></i>Backup Manual</h2>
                     <p class="text-sm text-gray-500 mb-4">Salvar uma cópia de segurança dos seus dados no computador.
@@ -408,8 +414,6 @@
 
     <script>
         // --- CONFIGURAÇÃO ---
-        // COLE SUA URL DO GOOGLE APPS SCRIPT ABAIXO (Mantenha as aspas)
-        // Exemplo: const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwu1W_8GWcS-b7XzQrzDpgZjFDebqtmoyj3Htc8gCQQptxufyI2hgBmFek_zrmXonpbGg/exec";
 
         // --- ESTADO GLOBAL ---
@@ -430,12 +434,8 @@
             document.getElementById('cfgEnergy').value = settings.energyRate;
             document.getElementById('cfgPower').value = settings.printerPower;
 
-            // Se tiver URL fixa ou salva, tenta sincronizar
-            if (cloudUrl) {
-                syncFromCloud(true);
-            } else {
-                refreshUI();
-            }
+            if (cloudUrl) syncFromCloud(true);
+            else refreshUI();
         });
 
         function loadLocal() {
@@ -516,6 +516,7 @@
                             <th class="px-4 py-3 text-right">Total</th>
                             <th class="px-4 py-3 text-right">Lucro (Margem)</th>
                             <th class="px-4 py-3 text-center">Pago?</th>
+                            <th class="px-4 py-3 text-center">Entrega</th>
                             <th class="px-4 py-3 text-center">Ação</th>
                         </tr>
                     </thead>
@@ -543,6 +544,7 @@
                     const safeId = String(sale.id).replace(/'/g, "\\'");
                     const profitDisplay = formatMoney(profit);
                     const profitStyle = sale.paid ? 'text-gray-800 font-bold' : 'text-gray-400 italic';
+                    const deliveredClass = sale.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400';
 
                     html += `
                         <tr class="border-b hover:bg-gray-50">
@@ -574,6 +576,11 @@
                                         ${sale.paid ? '<i class="fas fa-check text-white text-xs"></i>' : ''}
                                     </div>
                                 </label>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button onclick="toggleDelivered('${safeId}')" class="${deliveredClass} transition-colors text-lg" title="${sale.delivered ? 'Entregue' : 'Marcar como entregue'}">
+                                    <i class="fas fa-truck"></i>
+                                </button>
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <button onclick="deleteSale('${safeId}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
@@ -625,7 +632,8 @@
                                         <th class="px-4 py-2 text-center">Qtd</th>
                                         <th class="px-4 py-2 text-right">Total</th>
                                         <th class="px-4 py-2 text-right">Lucro</th>
-                                        <th class="px-4 py-2 text-center">Status</th>
+                                        <th class="px-4 py-2 text-center">Pago</th>
+                                        <th class="px-4 py-2 text-center">Entregue</th>
                                         <th class="px-4 py-2 text-center">Del</th>
                                     </tr>
                                 </thead>
@@ -639,6 +647,7 @@
                         const t = priceUnit * q;
                         const profit = t - (costUnit * q);
                         const safeId = String(s.id).replace(/'/g, "\\'");
+                        const deliveredClass = s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400';
 
                         const margin = t > 0 ? ((profit / t) * 100) : 0;
                         const marginColor = profit > 0 ? 'text-green-600' : 'text-red-500';
@@ -660,7 +669,12 @@
                                     ${formatMoney(profit)} <span class="text-[9px] ${marginColor}">(${margin.toFixed(0)}%)</span>
                                 </td>
                                 <td class="px-4 py-2 text-center cursor-pointer" onclick="togglePaid('${safeId}')">
-                                    ${s.paid ? '<span class="text-green-600 font-bold">Pago</span>' : '<span class="text-red-400">Pendente</span>'}
+                                    ${s.paid ? '<span class="text-green-600 font-bold">Sim</span>' : '<span class="text-red-400">Não</span>'}
+                                </td>
+                                <td class="px-4 py-2 text-center">
+                                    <button onclick="toggleDelivered('${safeId}')" class="${deliveredClass}" title="${s.delivered ? 'Entregue' : 'Marcar como entregue'}">
+                                        <i class="fas fa-truck"></i>
+                                    </button>
                                 </td>
                                 <td class="px-4 py-2 text-center">
                                     <button onclick="deleteSale('${safeId}')" class="text-gray-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
@@ -726,7 +740,8 @@
                 price: finalPrice, // Preço Unitário
                 qty: qty,          // Quantidade
                 customer: customer || "Consumidor Final",
-                originalPrice: parseFloat(prod.price) || 0,
+                energyCost: parseFloat(prod.energyCost) || 0, // Custo energia unitário
+                delivered: false,
                 paid: false,
                 date: new Date().toISOString()
             };
@@ -767,17 +782,29 @@
             }
         }
 
+        function toggleDelivered(id) {
+            const sale = sales.find(s => s.id == id);
+            if (sale) {
+                sale.delivered = !sale.delivered;
+                saveData();
+                renderSalesTable();
+            }
+        }
+
         function saveProduct() {
             const id = document.getElementById('editModelId').value;
             const name = document.getElementById('regProdName').value;
             const cost = parseFloat(document.getElementById('regProdCost').value);
             const price = parseFloat(document.getElementById('regProdPrice').value);
+            const energyCost = parseFloat(document.getElementById('regProdEnergyCost').value) || 0; // Pega custo energia
+
             if (!name || isNaN(cost) || isNaN(price)) { alert("Preencha todos os campos."); return; }
+
             if (id) {
                 const idx = products.findIndex(p => p.id == id);
-                if (idx !== -1) products[idx] = { ...products[idx], name, cost, price };
+                if (idx !== -1) products[idx] = { ...products[idx], name, cost, price, energyCost };
             } else {
-                products.push({ id: Date.now(), name, cost, price });
+                products.push({ id: Date.now(), name, cost, price, energyCost });
             }
             saveData();
             resetModelForm();
@@ -791,6 +818,7 @@
             document.getElementById('regProdName').value = prod.name;
             document.getElementById('regProdCost').value = prod.cost;
             document.getElementById('regProdPrice').value = prod.price;
+            document.getElementById('regProdEnergyCost').value = prod.energyCost || 0;
             document.getElementById('editModelId').value = prod.id;
             document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit mr-2 text-blue-600"></i>Editar Modelo';
             document.getElementById('btnSaveModel').textContent = "Atualizar Modelo";
@@ -829,6 +857,7 @@
             document.getElementById('regProdName').value = '';
             document.getElementById('regProdCost').value = '';
             document.getElementById('regProdPrice').value = '';
+            document.getElementById('regProdEnergyCost').value = '';
             document.getElementById('editModelId').value = '';
             document.getElementById('formTitle').innerHTML = '<i class="fas fa-plus-circle mr-2 text-green-600"></i>Novo Modelo';
             document.getElementById('btnSaveModel').textContent = "Cadastrar Modelo";
@@ -850,26 +879,18 @@
             const enCost = ((enPrice * power) / 1000) * hours;
 
             document.getElementById('displayTotalCost').textContent = formatMoney(matCost + enCost);
+            // Retorna obj para uso interno
+            return { total: matCost + enCost, energy: enCost };
         }
 
         function transferCostToModel() {
-            const weight = parseFloat(document.getElementById('calcWeight').value) || 0;
-            const h = parseFloat(document.getElementById('timeH').value) || 0;
-            const m = parseFloat(document.getElementById('timeM').value) || 0;
-            const s = parseFloat(document.getElementById('timeS').value) || 0;
-            const filPrice = parseFloat(settings.filamentPrice) || 0;
-            const enPrice = parseFloat(settings.energyRate) || 0;
-            const power = parseFloat(settings.printerPower) || 0;
+            const costData = calculateCost();
+            if (costData.total <= 0) { alert("Simule um custo primeiro."); return; }
 
-            const matCost = (filPrice / 1000) * weight;
-            const hours = h + (m / 60) + (s / 3600);
-            const enCost = ((enPrice * power) / 1000) * hours;
-            const total = matCost + enCost;
-
-            if (total <= 0) { alert("Simule um custo primeiro."); return; }
             switchTab('models');
             resetModelForm();
-            document.getElementById('regProdCost').value = total.toFixed(2);
+            document.getElementById('regProdCost').value = costData.total.toFixed(2);
+            document.getElementById('regProdEnergyCost').value = costData.energy.toFixed(4); // Salva custo energia oculto
             document.getElementById('regProdName').focus();
         }
 
@@ -881,12 +902,16 @@
         }
 
         function updateKPIs() {
-            const paidSales = sales.filter(s => s.paid);
+            const paidSales = sales.filter(s => s.paid); // KPIs financeiros apenas pagos
+            // Para energia, talvez interesse o TOTAL produzido (mesmo não pago)
+            const allSales = sales;
 
             let revenue = 0;
             let cost = 0;
             let totalItems = 0;
+            let totalEnergyCost = 0;
 
+            // Financeiro (só pagos)
             paidSales.forEach(s => {
                 const q = parseInt(s.qty) || 1;
                 revenue += (parseFloat(s.price) || 0) * q;
@@ -894,12 +919,25 @@
                 totalItems += q;
             });
 
+            // Energia (Tudo produzido)
+            allSales.forEach(s => {
+                const q = parseInt(s.qty) || 1;
+                totalEnergyCost += (parseFloat(s.energyCost) || 0) * q;
+            });
+
             const profit = revenue - cost;
+            // Estimativa kWh: Custo Total Energia / Tarifa Energia
+            const rate = parseFloat(settings.energyRate) || 1;
+            const kwhEst = totalEnergyCost / rate;
 
             document.getElementById('kpiRevenue').textContent = formatMoney(revenue);
             document.getElementById('kpiCost').textContent = formatMoney(cost);
             document.getElementById('kpiProfit').textContent = formatMoney(profit);
             document.getElementById('kpiCount').textContent = totalItems;
+
+            document.getElementById('kpiEnergy').textContent = formatMoney(totalEnergyCost);
+            document.getElementById('kpiEnergyKwh').textContent = kwhEst.toFixed(1) + " kWh estimados";
+
             document.getElementById('totalProfitDisplay').textContent = formatMoney(profit);
 
             updateCharts(revenue, cost, profit, paidSales);
