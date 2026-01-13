@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Vendas 3D</title>
+    <!-- Corrige o erro de favicon 404 -->
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Adicionando Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -49,6 +51,7 @@
             backdrop-filter: blur(4px);
         }
 
+        /* Transição suave para o acordeão */
         .group-details {
             transition: max-height 0.3s ease-out;
             overflow: hidden;
@@ -60,6 +63,7 @@
             transition: max-height 0.5s ease-in;
         }
 
+        /* Botões pequenos de quantidade */
         .qty-btn {
             width: 24px;
             height: 24px;
@@ -109,6 +113,7 @@
             border: 1px solid #bfdbfe;
         }
 
+        /* Estilo da Imagem no Card */
         .card-img-container {
             width: 100%;
             padding-top: 100%;
@@ -143,6 +148,7 @@
             vertical-align: middle;
         }
 
+        /* Carousel Modal Styles */
         #carouselModal {
             background-color: rgba(0, 0, 0, 0.95);
         }
@@ -152,25 +158,12 @@
             max-width: 90vw;
             object-fit: contain;
         }
-
-        /* Barra de progresso do filamento */
-        .filament-progress {
-            height: 6px;
-            border-radius: 3px;
-            background-color: #e5e7eb;
-            overflow: hidden;
-            margin-top: 4px;
-        }
-
-        .filament-bar {
-            height: 100%;
-            transition: width 0.5s ease;
-        }
     </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen flex flex-col relative">
 
+    <!-- Loading Overlay -->
     <div id="loadingOverlay"
         class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
@@ -192,6 +185,7 @@
         <p id="carouselCaption" class="absolute bottom-4 text-white font-medium text-lg"></p>
     </div>
 
+    <!-- Navegação Superior -->
     <nav class="bg-white shadow-md z-10 sticky top-0">
         <div class="max-w-6xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
@@ -236,10 +230,10 @@
 
     <div class="max-w-6xl mx-auto w-full p-4 sm:p-6 flex-grow">
 
-        <!-- VIEW: VENDAS -->
+        <!-- ======================= VIEW: VENDAS ======================= -->
         <div id="view-sales" class="view-section">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Formulário -->
+                <!-- Coluna Esquerda: Formulário -->
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2"><i
@@ -294,13 +288,13 @@
                         </div>
                     </div>
 
-                    <!-- Calculadora Rápida -->
+                    <!-- Orçamento Rápido (Somente Estimativa) -->
                     <div class="bg-white p-5 rounded-lg shadow border border-yellow-200 relative">
                         <div
                             class="absolute top-0 right-0 bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg uppercase">
-                            Simulação Rápida</div>
+                            Estimativa</div>
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2 text-sm"><i
-                                class="fas fa-calculator mr-2 text-yellow-600"></i>Calculadora de Custo</h2>
+                                class="fas fa-calculator mr-2 text-yellow-600"></i>Orçamento Rápido</h2>
                         <div class="space-y-3 text-sm">
                             <div>
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Filamento Utilizado</label>
@@ -331,22 +325,20 @@
                                 </div>
                             </div>
                             <div
-                                class="bg-yellow-50 p-3 rounded border border-yellow-100 flex justify-between items-center">
-                                <span class="text-xs text-gray-500 font-bold">Custo Estimado Unit.:</span>
-                                <span id="displayTotalCost" class="font-bold text-red-600 text-lg">R$ 0,00</span>
+                                class="bg-gray-100 p-3 rounded border border-gray-200 flex justify-between items-center">
+                                <span class="text-xs text-gray-500">Custo Base:</span>
+                                <span id="displayTotalCost" class="font-bold text-gray-700">R$ 0,00</span>
                             </div>
-                            <button onclick="transferCostToModel()"
-                                class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded text-xs transition shadow-sm flex justify-center items-center gap-2">
-                                <span>Usar no Cadastro</span> <i class="fas fa-arrow-right"></i>
-                            </button>
-                            <button onclick="switchTab('models')"
-                                class="w-full text-[10px] text-gray-400 hover:text-gray-600 text-center mt-1">Configurar
-                                Parâmetros (Energia)</button>
+                            <div
+                                class="bg-green-50 p-3 rounded border border-green-200 flex justify-between items-center">
+                                <span class="text-xs text-green-700 font-bold">Venda Sugerida (100%):</span>
+                                <span id="displaySuggestedPrice" class="font-bold text-green-700 text-lg">R$ 0,00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Histórico -->
+                <!-- Coluna Direita: Histórico -->
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden h-full flex flex-col">
                         <div class="bg-gray-50 p-4 border-b flex justify-between items-center flex-wrap gap-2">
@@ -362,7 +354,11 @@
                                 <span id="totalProfitDisplay" class="font-bold text-green-600 text-lg">R$ 0,00</span>
                             </div>
                         </div>
-                        <div id="salesListContainer" class="overflow-x-auto flex-grow bg-gray-50 p-2"></div>
+
+                        <div id="salesListContainer" class="overflow-x-auto flex-grow bg-gray-50 p-2">
+                            <!-- JS renderiza tabela aqui -->
+                        </div>
+
                         <div id="emptyState" class="p-12 text-center text-gray-400 hidden">
                             <i class="fas fa-clipboard-list text-5xl mb-3 text-gray-200"></i>
                             <p>Nenhuma venda registrada.</p>
@@ -408,63 +404,69 @@
                                 <div id="imageGalleryPreview" class="flex gap-2 mt-2 overflow-x-auto pb-2"></div>
                             </div>
 
-                            <!-- MINI CALCULADORA -->
-                            <div class="bg-blue-50 p-3 rounded border border-blue-100">
-                                <p class="text-xs font-bold text-blue-800 mb-2 uppercase flex justify-between">
-                                    <span><i class="fas fa-sync-alt"></i> Recalcular Custo</span>
+                            <!-- CALCULADORA DE CUSTO (INTEGRADA) -->
+                            <div class="bg-blue-50 p-4 rounded border border-blue-100 shadow-sm">
+                                <p class="text-xs font-bold text-blue-800 mb-3 uppercase flex items-center gap-2">
+                                    <i class="fas fa-calculator"></i> Definição de Custo de Produção
                                 </p>
-                                <div class="grid grid-cols-2 gap-2 text-xs mb-2">
-                                    <div>
-                                        <label>Peso (g)</label>
-                                        <input type="number" id="regProdWeight"
-                                            class="w-full p-1 border rounded bg-white" placeholder="0"
-                                            oninput="calculateModelFormCost()">
-                                    </div>
-                                    <div>
-                                        <label>Tempo (H)</label>
-                                        <div class="flex gap-1">
-                                            <input type="number" id="regProdTimeH"
-                                                class="w-full p-1 border rounded bg-white" placeholder="H"
-                                                oninput="calculateModelFormCost()">
-                                            <input type="number" id="regProdTimeM"
-                                                class="w-full p-1 border rounded bg-white" placeholder="M"
-                                                oninput="calculateModelFormCost()">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="text-[10px] text-gray-500">Alterar Filamento:</label>
-                                    <select id="regProdFilament" class="w-full p-1 border rounded text-xs bg-white"
+
+                                <div class="mb-3">
+                                    <label class="text-xs font-bold text-gray-500 block mb-1">Filamento
+                                        Utilizado</label>
+                                    <select id="regProdFilament"
+                                        class="w-full p-2 border rounded text-xs bg-white focus:ring-1 focus:ring-blue-400"
                                         onchange="calculateModelFormCost()">
                                         <option value="">Selecione...</option>
                                     </select>
                                 </div>
+
+                                <div class="grid grid-cols-2 gap-3 mb-2">
+                                    <div>
+                                        <label class="text-xs font-bold text-gray-500 block mb-1">Peso (g)</label>
+                                        <input type="number" id="regProdWeight"
+                                            class="w-full p-2 border rounded bg-white text-center" placeholder="0"
+                                            oninput="calculateModelFormCost()">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-gray-500 block mb-1">Tempo (H:M)</label>
+                                        <div class="flex gap-1">
+                                            <input type="number" id="regProdTimeH"
+                                                class="w-full p-2 border rounded bg-white text-center" placeholder="H"
+                                                oninput="calculateModelFormCost()">
+                                            <input type="number" id="regProdTimeM"
+                                                class="w-full p-2 border rounded bg-white text-center" placeholder="M"
+                                                oninput="calculateModelFormCost()">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Resultado Custo -->
+                                <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-blue-200">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-gray-500 block">Custo Total</label>
+                                        <input type="number" id="regProdCost" step="0.01" placeholder="0,00"
+                                            class="w-full p-1 bg-transparent border-none font-bold text-lg text-gray-800 focus:ring-0"
+                                            readonly>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-gray-400 block">Energia
+                                            (Incluso)</label>
+                                        <input type="number" id="displayEnergyCost" step="0.0001" placeholder="0,00"
+                                            class="w-full p-1 bg-transparent border-none text-sm text-gray-500 focus:ring-0"
+                                            readonly>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="text-xs font-bold text-gray-500 block mb-1">Custo Total (R$)</label>
-                                    <input type="number" id="regProdCost" step="0.01" placeholder="0,00"
-                                        class="w-full p-2 border rounded bg-gray-50 outline-none font-bold text-gray-700">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-bold text-gray-500 block mb-1">Venda Sugerida
-                                        (R$)</label>
-                                    <input type="number" id="regProdPrice" step="0.01" placeholder="0,00"
-                                        class="w-full p-2 border rounded outline-none">
-                                </div>
-                            </div>
-
-                            <div class="bg-yellow-50 p-2 rounded border border-yellow-100">
-                                <label class="text-xs font-bold text-yellow-800 block mb-1">Custo Energia (Incluso no
-                                    Total)</label>
-                                <input type="number" id="regProdEnergyCost" step="0.0001" placeholder="0,00"
-                                    class="w-full p-2 border border-yellow-200 rounded text-sm bg-white outline-none">
+                            <div class="mt-4">
+                                <label class="text-xs font-bold text-gray-500 block mb-1">Venda Sugerida (R$)</label>
+                                <input type="number" id="regProdPrice" step="0.01" placeholder="0,00"
+                                    class="w-full p-2 border-2 border-green-100 rounded focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800">
                             </div>
 
                             <button onclick="saveProduct()" id="btnSaveModel"
-                                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">
-                                Cadastrar Modelo
+                                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded transition shadow-md mt-2">
+                                Salvar Modelo
                             </button>
 
                             <hr class="border-gray-200 my-4">
@@ -472,10 +474,13 @@
                                 <p class="text-xs font-bold text-gray-500 mb-2 uppercase"><i class="fas fa-cog"></i>
                                     Configs Globais</p>
                                 <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div><label>Filamento Padrão (R$/kg)</label><input type="number" id="cfgFilament"
+                                            class="w-full p-1 border rounded" onchange="saveConfig()"></div>
                                     <div><label>Energia (R$/kWh)</label><input type="number" id="cfgEnergy"
                                             class="w-full p-1 border rounded" onchange="saveConfig()"></div>
-                                    <div><label>Potência (W)</label><input type="number" id="cfgPower"
-                                            class="w-full p-1 border rounded" onchange="saveConfig()"></div>
+                                    <div class="col-span-2"><label>Potência (W)</label><input type="number"
+                                            id="cfgPower" class="w-full p-1 border rounded" onchange="saveConfig()">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -491,7 +496,9 @@
                                 <i class="fas fa-th-large"></i> Ver Cards
                             </button>
                         </div>
-                        <div id="modelsContainer" class="p-2"></div>
+                        <div id="modelsContainer" class="p-2">
+                            <!-- JS renderiza lista ou grid aqui -->
+                        </div>
                         <div id="emptyModels" class="p-8 text-center text-gray-400 hidden">
                             Nenhum modelo cadastrado.
                         </div>
@@ -503,6 +510,7 @@
         <!-- VIEW: FILAMENTOS -->
         <div id="view-filaments" class="view-section hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Formulário de Filamento -->
                 <div class="lg:col-span-1">
                     <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2"><i
@@ -546,6 +554,7 @@
                     </div>
                 </div>
 
+                <!-- Lista de Filamentos -->
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                         <div class="bg-gray-50 p-4 border-b">
@@ -668,6 +677,10 @@
         // INIT
         document.addEventListener('DOMContentLoaded', () => {
             loadLocal();
+            // Fallback: only update if elements exist
+            const cfgFilament = document.getElementById('cfgFilament');
+            if (cfgFilament) cfgFilament.value = settings.filamentPrice;
+
             document.getElementById('cfgEnergy').value = settings.energyRate;
             document.getElementById('cfgPower').value = settings.printerPower;
 
@@ -742,11 +755,7 @@
             if (id) {
                 const idx = filaments.findIndex(f => f.id == id);
                 if (idx !== -1) {
-                    // Keep existing remainingWeight if not specifically logic for updating it, or update proportional?
-                    // If just editing price/name, keep remaining. If 'weight' changes, maybe reset? User said "only works for new ones", so assume edit preserves current state unless reset.
-                    // Let's just update basic info.
                     filaments[idx] = { ...filaments[idx], name, price, color };
-                    // If user wants to reset stock, they should use the manual adjust.
                 }
             } else {
                 filaments.push({ id: Date.now(), name, price, color, initialWeight: weight, remainingWeight: weight });
@@ -836,137 +845,418 @@
             const timeH = parseFloat(document.getElementById('regProdTimeH').value) || 0;
             const timeM = parseFloat(document.getElementById('regProdTimeM').value) || 0;
             const filamentId = document.getElementById('regProdFilament').value;
+
             if (weight === 0 && timeH === 0 && timeM === 0) return;
+
             let filPrice = parseFloat(settings.filamentPrice) || 0;
-            if (filamentId && filamentId !== 'default') { const sel = filaments.find(f => f.id == filamentId); if (sel) filPrice = sel.price; }
+            if (filamentId && filamentId !== 'default') {
+                const selected = filaments.find(f => f.id == filamentId);
+                if (selected) filPrice = selected.price;
+            }
+
             const enPrice = parseFloat(settings.energyRate) || 0;
             const power = parseFloat(settings.printerPower) || 0;
+
             const matCost = (filPrice / 1000) * weight;
             const hours = timeH + (timeM / 60);
             const enCost = ((enPrice * power) / 1000) * hours;
+
             const total = matCost + enCost;
+
             document.getElementById('regProdCost').value = total.toFixed(2);
             document.getElementById('regProdEnergyCost').value = enCost.toFixed(4);
+            document.getElementById('displayEnergyCost').value = enCost.toFixed(4);
         }
 
-        // --- IMAGE ---
+        // --- IMAGE HANDLING (COMPRESSION) ---
         function handleImageUpload(input) {
-            const file = input.files[0]; if (!file) return;
+            const file = input.files[0];
+            if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function (e) {
                 const img = new Image();
                 img.onload = function () {
-                    const canvas = document.createElement('canvas'); const MAX_WIDTH = 400; let width = img.width; let height = img.height;
-                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                    currentModelImages.push(dataUrl); renderImagePreviewList(); input.value = '';
-                }; img.src = e.target.result;
-            }; reader.readAsDataURL(file);
+
+                    currentModelImages.push(dataUrl);
+                    renderImagePreviewList();
+                    input.value = '';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
+
         function renderImagePreviewList() {
-            const container = document.getElementById('imageGalleryPreview'); container.innerHTML = '';
+            const container = document.getElementById('imageGalleryPreview');
+            container.innerHTML = '';
             currentModelImages.forEach((imgSrc, idx) => {
-                const w = document.createElement('div'); w.className = "relative flex-shrink-0 w-16 h-16 border rounded overflow-hidden group";
-                w.innerHTML = `<img src="${imgSrc}" class="w-full h-full object-cover"><button onclick="removeImage(${idx})" class="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">&times;</button>`;
-                container.appendChild(w);
+                const wrapper = document.createElement('div');
+                wrapper.className = "relative flex-shrink-0 w-16 h-16 border rounded overflow-hidden group";
+                wrapper.innerHTML = `
+                    <img src="${imgSrc}" class="w-full h-full object-cover">
+                    <button onclick="removeImage(${idx})" class="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">&times;</button>
+                `;
+                container.appendChild(wrapper);
             });
         }
-        function removeImage(index) { currentModelImages.splice(index, 1); renderImagePreviewList(); }
 
-        // --- MODELS ---
-        function toggleModelsView() { viewModeModels = (viewModeModels === 'list') ? 'grid' : 'list'; const btn = document.getElementById('btnModelsView'); if (viewModeModels === 'grid') { btn.innerHTML = '<i class="fas fa-list"></i> Ver Lista'; } else { btn.innerHTML = '<i class="fas fa-th-large"></i> Ver Cards'; } renderModelsTable(); }
+        function removeImage(index) {
+            currentModelImages.splice(index, 1);
+            renderImagePreviewList();
+        }
+
+        // --- MODELS VIEW ---
+        function toggleModelsView() {
+            viewModeModels = (viewModeModels === 'list') ? 'grid' : 'list';
+            const btn = document.getElementById('btnModelsView');
+            if (viewModeModels === 'grid') {
+                btn.innerHTML = '<i class="fas fa-list"></i> Ver Lista';
+            } else {
+                btn.innerHTML = '<i class="fas fa-th-large"></i> Ver Cards';
+            }
+            renderModelsTable();
+        }
+
         function renderModelsTable() {
-            const container = document.getElementById('modelsContainer'); container.innerHTML = '';
-            if (!products || products.length === 0) { document.getElementById('emptyModels').classList.remove('hidden'); return; }
+            const container = document.getElementById('modelsContainer');
+            container.innerHTML = '';
+
+            if (!products || products.length === 0) {
+                document.getElementById('emptyModels').classList.remove('hidden'); return;
+            }
             document.getElementById('emptyModels').classList.add('hidden');
+
             if (viewModeModels === 'list') {
                 let html = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-100"><tr><th class="px-4 py-3">Img</th><th class="px-4 py-3">Nome</th><th class="px-4 py-3 text-right">Custo</th><th class="px-4 py-3 text-right">Venda</th><th class="px-4 py-3 text-right">Margem</th><th class="px-4 py-3 text-center">Ações</th></tr></thead><tbody>`;
+
                 products.forEach(p => {
-                    const cost = parseFloat(p.cost) || 0; const price = parseFloat(p.price) || 0; const margin = price - cost; const safeId = String(p.id).replace(/'/g, "\\'");
+                    const cost = parseFloat(p.cost) || 0;
+                    const price = parseFloat(p.price) || 0;
+                    const margin = price - cost;
+                    const safeId = String(p.id).replace(/'/g, "\\'");
                     const thumb = (p.images && p.images.length > 0) ? p.images[0] : (p.image || '');
                     const imgHtml = thumb ? `<img src="${thumb}" class="w-8 h-8 rounded object-cover border cursor-pointer" onclick="openProductCarousel('${safeId}')">` : `<div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-xs"><i class="fas fa-cube text-gray-400"></i></div>`;
+
                     html += `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-4 py-3">${imgHtml}</td><td class="px-4 py-3 font-medium text-gray-900">${p.name || 'Sem nome'}</td><td class="px-4 py-3 text-right text-gray-500">${formatMoney(cost)}</td><td class="px-4 py-3 text-right text-gray-500">${formatMoney(price)}</td><td class="px-4 py-3 text-right text-green-600 font-bold">${formatMoney(margin)}</td><td class="px-4 py-3 text-center space-x-2"><button onclick="editModel('${safeId}')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button><button onclick="deleteModel('${safeId}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash-alt"></i></button></td></tr>`;
-                }); html += `</tbody></table></div>`; container.innerHTML = html;
+                });
+                html += `</tbody></table></div>`;
+                container.innerHTML = html;
             } else {
                 let html = `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">`;
                 products.forEach(p => {
-                    const price = parseFloat(p.price) || 0; const safeId = String(p.id).replace(/'/g, "\\'");
+                    const price = parseFloat(p.price) || 0;
+                    const safeId = String(p.id).replace(/'/g, "\\'");
                     const thumb = (p.images && p.images.length > 0) ? p.images[0] : (p.image || '');
                     const imgElement = thumb ? `<img src="${thumb}" class="card-img">` : `<div class="absolute inset-0 flex items-center justify-center text-gray-300"><i class="fas fa-cube text-4xl"></i></div>`;
-                    html += `<div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden flex flex-col"><div class="card-img-container border-b" onclick="openProductCarousel('${safeId}')">${imgElement}${(p.images && p.images.length > 1) ? '<div class="absolute bottom-1 right-1 bg-black bg-opacity-50 text-white text-[10px] px-1 rounded"><i class="fas fa-images"></i></div>' : ''}</div><div class="p-3 flex-grow"><h3 class="font-bold text-gray-800 text-sm mb-1 truncate">${p.name}</h3><div class="flex justify-between text-xs mb-2"><span></span><span class="text-green-600 font-bold text-sm">${formatMoney(price)}</span></div></div><div class="bg-gray-50 p-2 flex justify-between border-t"><button onclick="editModel('${safeId}')" class="text-blue-500 text-xs font-bold hover:text-blue-700 w-1/2 border-r">EDITAR</button><button onclick="deleteModel('${safeId}')" class="text-red-500 text-xs font-bold hover:text-red-700 w-1/2">EXCLUIR</button></div></div>`;
-                }); html += `</div>`; container.innerHTML = html;
+
+                    html += `
+                    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden flex flex-col">
+                        <div class="card-img-container border-b" onclick="openProductCarousel('${safeId}')">
+                            ${imgElement}
+                            ${(p.images && p.images.length > 1) ? '<div class="absolute bottom-1 right-1 bg-black bg-opacity-50 text-white text-[10px] px-1 rounded"><i class="fas fa-images"></i></div>' : ''}
+                        </div>
+                        <div class="p-3 flex-grow">
+                            <h3 class="font-bold text-gray-800 text-sm mb-1 truncate">${p.name}</h3>
+                            <div class="flex justify-between text-xs mb-2">
+                                <span></span>
+                                <span class="text-green-600 font-bold text-sm">${formatMoney(price)}</span>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-2 flex justify-between border-t">
+                            <button onclick="editModel('${safeId}')" class="text-blue-500 text-xs font-bold hover:text-blue-700 w-1/2 border-r">EDITAR</button>
+                            <button onclick="deleteModel('${safeId}')" class="text-red-500 text-xs font-bold hover:text-red-700 w-1/2">EXCLUIR</button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
             }
         }
 
         // --- SALES ---
-        function updateDropdown() { const d = document.getElementById('productDropdown'); d.innerHTML = '<option value="">Selecione...</option>'; if (products.length > 0) products.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name || "Sem Nome"; d.appendChild(o); }); }
-        function updateCustomerDatalist() { const dl = document.getElementById('customerList'); dl.innerHTML = '';[...new Set(sales.map(s => s.customer || "Consumidor Final"))].forEach(c => { const o = document.createElement('option'); o.value = c; dl.appendChild(o); }); }
-        function toggleViewMode() { viewMode = (viewMode === 'table') ? 'customer' : 'table'; const btn = document.getElementById('btnViewMode'); if (viewMode === 'customer') { btn.innerHTML = '<i class="fas fa-list"></i> Lista Simples'; btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200'); } else { btn.innerHTML = '<i class="fas fa-users"></i> Agrupar por Cliente'; btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200'); } renderSalesTable(); }
-        function toggleStatus(id) { const s = sales.find(s => s.id == id); if (s) { const st = ['waiting', 'printing', 'done']; s.status = st[(st.indexOf(s.status || 'waiting') + 1) % st.length]; saveData(); renderSalesTable(); } }
-        function getStatusBadge(s) { s = s || 'waiting'; if (s === 'printing') return `<span class="status-badge status-printing"><i class="fas fa-cog fa-spin"></i> Produzindo</span>`; if (s === 'done') return `<span class="status-badge status-done"><i class="fas fa-cube"></i> Pronto</span>`; return `<span class="status-badge status-waiting"><i class="far fa-clock"></i> Espera</span>`; }
-        function renderSalesTable() {
-            const container = document.getElementById('salesListContainer'); container.innerHTML = '';
-            if (!sales || sales.length === 0) { document.getElementById('emptyState').classList.remove('hidden'); container.classList.add('hidden'); return; }
-            document.getElementById('emptyState').classList.add('hidden'); container.classList.remove('hidden');
-            if (viewMode === 'table') {
-                let html = `<table class="w-full text-sm text-left text-gray-500 rounded-lg overflow-hidden"><thead class="text-xs text-gray-700 uppercase bg-gray-200 sticky top-0"><tr><th class="px-4 py-3 whitespace-nowrap">Produto</th><th class="px-4 py-3 text-center">Qtd</th><th class="px-4 py-3 text-right">Total</th><th class="px-4 py-3 text-center">Status</th><th class="px-4 py-3 text-center">Pago</th><th class="px-4 py-3 text-center">Entregue</th><th class="px-4 py-3 text-center">Ação</th></tr></thead><tbody class="bg-white">`;
-                [...sales].sort((a, b) => (b.id > a.id ? 1 : -1)).forEach(sale => {
-                    const qty = parseInt(sale.qty) || 1; const total = (parseFloat(sale.price) || 0) * qty; const safeId = String(sale.id).replace(/'/g, "\\'");
-                    const prod = products.find(p => p.name === sale.name); const thumb = (prod && prod.images && prod.images.length > 0) ? prod.images[0] : (prod && prod.image ? prod.image : ''); const imgHtml = thumb ? `<img src="${thumb}" class="w-6 h-6 rounded border mr-1 inline-block cursor-pointer" onclick="openProductCarousel('${prod ? prod.id : ''}')">` : '';
-                    html += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3"><div class="font-bold text-gray-800 flex items-center gap-1 flex-wrap">${sale.customer || "Consumidor Final"}<button onclick="editSaleCustomer('${safeId}')" class="text-[10px] text-blue-400 hover:text-blue-600"><i class="fas fa-pen"></i></button></div><div class="text-xs text-gray-500 flex items-center">${imgHtml} ${sale.name}</div></td><td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-2"><button onclick="updateSaleQty('${safeId}', -1)" class="qty-btn">-</button><span class="font-bold text-gray-600 w-4">${qty}</span><button onclick="updateSaleQty('${safeId}', 1)" class="qty-btn">+</button></div></td><td class="px-4 py-3 text-right text-gray-800 font-medium">${formatMoney(total)}</td><td class="px-4 py-3 text-center" onclick="toggleStatus('${safeId}')">${getStatusBadge(sale.status)}</td><td class="px-4 py-3 text-center"><label class="cursor-pointer inline-flex items-center"><input type="checkbox" class="hidden" onchange="togglePaid('${safeId}')" ${sale.paid ? 'checked' : ''}><div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center transition-colors ${sale.paid ? 'bg-green-500 border-green-500' : ''}">${sale.paid ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}</div></label></td><td class="px-4 py-3 text-center"><button onclick="toggleDelivered('${safeId}')" class="${sale.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400'} transition-colors" title="Entrega"><i class="fas fa-truck"></i></button></td><td class="px-4 py-3 text-center"><button onclick="deleteSale('${safeId}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td></tr>`;
-                }); html += `</tbody></table>`; container.innerHTML = html;
-            } else {
-                const groups = {}; sales.forEach(s => { const c = s.customer || "Outros"; if (!groups[c]) groups[c] = []; groups[c].push(s); });
-                Object.keys(groups).sort().forEach(customer => {
-                    const groupSales = groups[customer];
-                    const totalItems = groupSales.reduce((s, i) => s + (parseInt(i.qty) || 1), 0); const totalVal = groupSales.reduce((s, i) => s + ((parseFloat(i.price) || 0) * (parseInt(i.qty) || 1)), 0); const pending = groupSales.filter(s => !s.paid).length;
-                    let html = `<div class="mb-3 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"><div onclick="this.parentElement.classList.toggle('group-open')" class="p-4 bg-white cursor-pointer hover:bg-gray-50 flex justify-between items-center select-none"><div class="flex items-center gap-3"><div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center font-bold">${customer.charAt(0).toUpperCase()}</div><div><h3 class="font-bold text-gray-800">${customer}</h3><p class="text-xs text-gray-500">${totalItems} itens • ${formatMoney(totalVal)}</p></div></div><div class="flex items-center gap-3">${pending > 0 ? `<span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full font-bold">${pending} pendentes</span>` : `<span class="text-green-500 text-xs font-bold"><i class="fas fa-check-circle"></i> OK</span>`}<i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 transform group-open:rotate-180"></i></div></div><div class="group-details bg-gray-50 border-t border-gray-100"><table class="w-full text-xs text-left text-gray-600"><thead class="uppercase bg-gray-100 text-gray-500"><tr><th class="px-4 py-2">Item</th><th class="px-4 py-2 text-center">Qtd</th><th class="px-4 py-2 text-center">Status</th><th class="px-4 py-2 text-center">Pago</th><th class="px-4 py-2 text-center">Del</th><th class="px-4 py-2 text-center">X</th></tr></thead><tbody>`;
-                    groupSales.forEach(s => {
-                        const q = parseInt(s.qty) || 1; const safeId = String(s.id).replace(/'/g, "\\'");
-                        html += `<tr class="border-b border-gray-100"><td class="px-4 py-2 font-medium">${s.name}</td><td class="px-4 py-2 text-center"><div class="flex items-center justify-center gap-1"><button onclick="updateSaleQty('${safeId}', -1)" class="w-4 h-4 bg-gray-200 text-gray-600 rounded flex items-center justify-center font-bold hover:bg-gray-300">-</button><span class="w-3">${q}</span><button onclick="updateSaleQty('${safeId}', 1)" class="w-4 h-4 bg-gray-200 text-gray-600 rounded flex items-center justify-center font-bold hover:bg-gray-300">+</button></div></td><td class="px-4 py-2 text-center cursor-pointer" onclick="toggleStatus('${safeId}')">${getStatusBadge(s.status)}</td><td class="px-4 py-2 text-center cursor-pointer" onclick="togglePaid('${safeId}')">${s.paid ? '<span class="text-green-600 font-bold">Sim</span>' : '<span class="text-red-400">Não</span>'}</td><td class="px-4 py-2 text-center"><button onclick="toggleDelivered('${safeId}')" class="${s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400'}" title="Entregue"><i class="fas fa-truck"></i></button></td><td class="px-4 py-2 text-center"><button onclick="deleteSale('${safeId}')" class="text-gray-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td></tr>`;
-                    }); html += `</tbody></table></div></div>`; container.insertAdjacentHTML('beforeend', html);
+        function updateDropdown() {
+            const dropdown = document.getElementById('productDropdown');
+            dropdown.innerHTML = '<option value="">Selecione...</option>';
+            if (products && products.length > 0) {
+                products.forEach(prod => {
+                    const option = document.createElement('option');
+                    option.value = prod.id;
+                    option.textContent = prod.name || "Sem Nome";
+                    dropdown.appendChild(option);
                 });
             }
         }
 
+        function updateCustomerDatalist() {
+            const dl = document.getElementById('customerList');
+            dl.innerHTML = '';
+            const customers = [...new Set(sales.map(s => s.customer || "Consumidor Final"))];
+            customers.forEach(c => { const opt = document.createElement('option'); opt.value = c; dl.appendChild(opt); });
+        }
+
+        function toggleViewMode() {
+            viewMode = (viewMode === 'table') ? 'customer' : 'table';
+            const btn = document.getElementById('btnViewMode');
+            if (viewMode === 'customer') {
+                btn.innerHTML = '<i class="fas fa-list"></i> Lista Simples';
+                btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
+            } else {
+                btn.innerHTML = '<i class="fas fa-users"></i> Agrupar por Cliente';
+                btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200');
+            }
+            renderSalesTable();
+        }
+
+        function toggleStatus(id) {
+            const sale = sales.find(s => s.id == id);
+            if (sale) {
+                const statuses = ['waiting', 'printing', 'done'];
+                const currentIdx = statuses.indexOf(sale.status || 'waiting');
+                const nextIdx = (currentIdx + 1) % statuses.length;
+                sale.status = statuses[nextIdx];
+                saveData();
+                renderSalesTable();
+            }
+        }
+
+        function getStatusBadge(status) {
+            status = status || 'waiting';
+            if (status === 'printing') return `<span class="status-badge status-printing"><i class="fas fa-cog fa-spin"></i> Produzindo</span>`;
+            if (status === 'done') return `<span class="status-badge status-done"><i class="fas fa-cube"></i> Pronto</span>`;
+            return `<span class="status-badge status-waiting"><i class="far fa-clock"></i> Espera</span>`;
+        }
+
+        function renderSalesTable() {
+            const container = document.getElementById('salesListContainer');
+            container.innerHTML = '';
+
+            if (!sales || sales.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                container.classList.add('hidden');
+                return;
+            }
+            document.getElementById('emptyState').classList.add('hidden');
+            container.classList.remove('hidden');
+
+            if (viewMode === 'table') {
+                let html = `
+                <table class="w-full text-sm text-left text-gray-500 rounded-lg overflow-hidden">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-200 sticky top-0">
+                        <tr>
+                            <th class="px-4 py-3 whitespace-nowrap">Produto</th>
+                            <th class="px-4 py-3 text-center">Qtd</th>
+                            <th class="px-4 py-3 text-right">Total</th>
+                            <th class="px-4 py-3 text-center">Status</th>
+                            <th class="px-4 py-3 text-center">Pago</th>
+                            <th class="px-4 py-3 text-center">Entregue</th>
+                            <th class="px-4 py-3 text-center">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">`;
+
+                const sortedSales = [...sales].sort((a, b) => (b.id > a.id ? 1 : -1));
+
+                sortedSales.forEach(sale => {
+                    const qty = parseInt(sale.qty) || 1;
+                    const priceUnit = parseFloat(sale.price) || 0;
+                    const priceTotal = priceUnit * qty;
+                    const customer = sale.customer || "Consumidor Final";
+                    const safeId = String(sale.id).replace(/'/g, "\\'");
+                    const deliveredClass = sale.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400';
+
+                    const product = products.find(p => p.name === sale.name);
+                    const thumb = (product && product.images && product.images.length > 0) ? product.images[0] : (product && product.image ? product.image : '');
+                    const imgHtml = thumb ? `<img src="${thumb}" class="w-6 h-6 rounded border mr-1 inline-block cursor-pointer" onclick="openProductCarousel('${product ? product.id : ''}')">` : '';
+
+                    html += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">
+                                <div class="font-bold text-gray-800 flex items-center gap-1 flex-wrap">
+                                    ${customer}
+                                    <button onclick="editSaleCustomer('${safeId}')" class="text-[10px] text-blue-400 hover:text-blue-600"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="text-xs text-gray-500 flex items-center">${imgHtml} ${sale.name}</div>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="updateSaleQty('${safeId}', -1)" class="qty-btn">-</button>
+                                    <span class="font-bold text-gray-600 w-4">${qty}</span>
+                                    <button onclick="updateSaleQty('${safeId}', 1)" class="qty-btn">+</button>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-right text-gray-800 font-medium">
+                                ${formatMoney(priceTotal)}
+                            </td>
+                            <td class="px-4 py-3 text-center" onclick="toggleStatus('${safeId}')">
+                                ${getStatusBadge(sale.status)}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <label class="cursor-pointer inline-flex items-center">
+                                    <input type="checkbox" class="hidden" onchange="togglePaid('${safeId}')" ${sale.paid ? 'checked' : ''}>
+                                    <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center transition-colors ${sale.paid ? 'bg-green-500 border-green-500' : ''}">
+                                        ${sale.paid ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}
+                                    </div>
+                                </label>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button onclick="toggleDelivered('${safeId}')" class="${deliveredClass} transition-colors" title="Entrega">
+                                    <i class="fas fa-truck"></i>
+                                </button>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button onclick="deleteSale('${safeId}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>`;
+                });
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            } else {
+                const groups = {};
+                sales.forEach(sale => {
+                    const c = sale.customer || "Outros";
+                    if (!groups[c]) groups[c] = [];
+                    groups[c].push(sale);
+                });
+                const sortedCustomers = Object.keys(groups).sort();
+
+                sortedCustomers.forEach(customer => {
+                    const groupSales = groups[customer];
+                    const totalItems = groupSales.reduce((sum, s) => sum + (parseInt(s.qty) || 1), 0);
+                    const totalValue = groupSales.reduce((sum, s) => sum + ((parseFloat(s.price) || 0) * (parseInt(s.qty) || 1)), 0);
+                    const pending = groupSales.filter(s => !s.paid).length;
+
+                    const groupHtml = document.createElement('div');
+                    groupHtml.className = "mb-3 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden";
+
+                    let headerHtml = `
+                        <div onclick="this.parentElement.classList.toggle('group-open')" class="p-4 bg-white cursor-pointer hover:bg-gray-50 flex justify-between items-center select-none">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center font-bold">
+                                    ${customer.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-800">${customer}</h3>
+                                    <p class="text-xs text-gray-500">${totalItems} itens • ${formatMoney(totalValue)}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                ${pending > 0 ? `<span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full font-bold">${pending} pendentes</span>` : `<span class="text-green-500 text-xs font-bold"><i class="fas fa-check-circle"></i> OK</span>`}
+                                <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 transform group-open:rotate-180"></i>
+                            </div>
+                        </div>
+                        <div class="group-details bg-gray-50 border-t border-gray-100">
+                            <table class="w-full text-xs text-left text-gray-600">
+                                <thead class="uppercase bg-gray-100 text-gray-500">
+                                    <tr>
+                                        <th class="px-4 py-2">Item</th>
+                                        <th class="px-4 py-2 text-center">Qtd</th>
+                                        <th class="px-4 py-2 text-center">Status</th>
+                                        <th class="px-4 py-2 text-center">Pago</th>
+                                        <th class="px-4 py-2 text-center">Del</th>
+                                        <th class="px-4 py-2 text-center">X</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    groupSales.forEach(s => {
+                        const q = parseInt(s.qty) || 1;
+                        const safeId = String(s.id).replace(/'/g, "\\'");
+                        const deliveredClass = s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400';
+
+                        headerHtml += `
+                            <tr class="border-b border-gray-100">
+                                <td class="px-4 py-2 font-medium">${s.name}</td>
+                                <td class="px-4 py-2 text-center">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <button onclick="updateSaleQty('${safeId}', -1)" class="w-4 h-4 bg-gray-200 text-gray-600 rounded flex items-center justify-center font-bold hover:bg-gray-300">-</button>
+                                        <span class="w-3">${q}</span>
+                                        <button onclick="updateSaleQty('${safeId}', 1)" class="w-4 h-4 bg-gray-200 text-gray-600 rounded flex items-center justify-center font-bold hover:bg-gray-300">+</button>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-2 text-center cursor-pointer" onclick="toggleStatus('${safeId}')">
+                                    ${getStatusBadge(s.status)}
+                                </td>
+                                <td class="px-4 py-2 text-center cursor-pointer" onclick="togglePaid('${safeId}')">
+                                    ${s.paid ? '<span class="text-green-600 font-bold">Sim</span>' : '<span class="text-red-400">Não</span>'}
+                                </td>
+                                <td class="px-4 py-2 text-center">
+                                    <button onclick="toggleDelivered('${safeId}')" class="${deliveredClass}" title="Entregue">
+                                        <i class="fas fa-truck"></i>
+                                    </button>
+                                </td>
+                                <td class="px-4 py-2 text-center">
+                                    <button onclick="deleteSale('${safeId}')" class="text-gray-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    headerHtml += `</tbody></table></div></div>`; container.insertAdjacentHTML('beforeend', html);
+                });
+            }
+        }
+
+        // --- ACTIONS ---
         function addSale() {
-            const id = document.getElementById('productDropdown').value;
+            const dropdown = document.getElementById('productDropdown');
+            const id = dropdown.value;
             const finalPrice = parseFloat(document.getElementById('finalSalePrice').value);
             const qty = parseInt(document.getElementById('saleQty').value);
             const customer = document.getElementById('saleCustomer').value.trim();
+
             if (!id || isNaN(finalPrice)) { alert("Selecione um produto e preço."); return; }
+            if (isNaN(qty) || qty < 1) { alert("Quantidade inválida."); return; }
+
             const prod = products.find(p => p.id == id);
             if (!prod) { alert("Produto não encontrado."); return; }
-            const sale = { id: Date.now(), name: prod.name, cost: parseFloat(prod.cost) || 0, price: finalPrice, qty: qty, customer: customer || "Consumidor Final", energyCost: parseFloat(prod.energyCost) || 0, delivered: false, paid: false, status: 'waiting', date: new Date().toISOString() };
+
+            const sale = {
+                id: Date.now(),
+                name: prod.name,
+                cost: parseFloat(prod.cost) || 0,
+                price: finalPrice,
+                qty: qty,
+                customer: customer || "Consumidor Final",
+                energyCost: parseFloat(prod.energyCost) || 0,
+                delivered: false,
+                paid: false,
+                status: 'waiting',
+                date: new Date().toISOString()
+            };
+            sales.push(sale);
+            saveData();
 
             // DEDUCT FILAMENT STOCK
-            if (prod.weight && prod.filamentId) {
-                const fil = filaments.find(f => f.id == prod.filamentId); // You need to make sure product stores filamentId
-                // Wait, in `saveProduct`, I didn't save filamentId from `regProdFilament`. 
-                // Let's fix that in saveProduct below. 
-                // Assuming it is saved, we deduct here.
-            }
-
-            // Actually, `regProdFilament` logic needs to be robust. 
-            // In `saveProduct` I use `regProdFilament` to calculate cost, but didn't save it to `products`.
-            // I should save it.
-
-            sales.push(sale); saveData();
-
-            // If product has a filament associated and a weight, deduct stock
             if (prod.weight && prod.filamentId) {
                 const filIndex = filaments.findIndex(f => f.id == prod.filamentId);
                 if (filIndex !== -1) {
                     const totalWeight = prod.weight * qty;
                     filaments[filIndex].remainingWeight = Math.max(0, (filaments[filIndex].remainingWeight || filaments[filIndex].initialWeight) - totalWeight);
-                    saveData(); // Save filament update
-                    renderFilamentsTable(); // Update UI
+                    saveData();
+                    renderFilamentsTable();
                 }
             }
 
-            renderSalesTable(); updateCustomerDatalist(); updateKPIs(); alert("Venda registrada!");
+            renderSalesTable();
+            updateCustomerDatalist();
+            updateKPIs();
+            alert("Venda registrada!");
         }
 
         function updateSaleQty(id, delta) { const s = sales.find(s => s.id == id); if (s) { const n = (parseInt(s.qty) || 1) + delta; if (n > 0) { s.qty = n; saveData(); renderSalesTable(); updateKPIs(); } else if (confirm("Remover?")) deleteSale(id); } }
@@ -982,15 +1272,13 @@
             const cost = parseFloat(document.getElementById('regProdCost').value);
             const price = parseFloat(document.getElementById('regProdPrice').value);
             const energyCost = parseFloat(document.getElementById('regProdEnergyCost').value) || 0;
-            const image = document.getElementById('modelImageBase64').value;
             const weight = parseFloat(document.getElementById('regProdWeight').value) || 0;
             const timeH = parseFloat(document.getElementById('regProdTimeH').value) || 0;
             const timeM = parseFloat(document.getElementById('regProdTimeM').value) || 0;
-            const filamentId = document.getElementById('regProdFilament').value; // Capture filament ID
+            const filamentId = document.getElementById('regProdFilament').value;
 
             if (!name || isNaN(cost) || isNaN(price)) { alert("Preencha campos."); return; }
 
-            // Images
             const images = [...currentModelImages];
 
             if (id) {
@@ -998,7 +1286,7 @@
                 if (idx !== -1) {
                     const old = products[idx];
                     const finalImages = (images.length > 0 || currentModelImagesLoaded) ? images : old.images;
-                    products[idx] = { ...old, name, cost, price, energyCost, images: finalImages, weight, timeH, timeM, filamentId }; // Save filamentId
+                    products[idx] = { ...old, name, cost, price, energyCost, images: finalImages, weight, timeH, timeM, filamentId };
                     sales.forEach(s => { if (s.name === old.name) { s.name = name; s.energyCost = energyCost; } });
                 }
             } else {
@@ -1018,7 +1306,6 @@
             document.getElementById('regProdWeight').value = p.weight || "";
             document.getElementById('regProdTimeH').value = p.timeH || "";
             document.getElementById('regProdTimeM').value = p.timeM || "";
-            // Set filament dropdown
             if (p.filamentId) document.getElementById('regProdFilament').value = p.filamentId;
 
             currentModelImages = [];
@@ -1040,31 +1327,80 @@
             document.getElementById('btnCancelEdit').classList.add('hidden');
         }
 
+        // --- CALCULATOR (SALES TAB - QUICK QUOTE) ---
         function calculateCost() {
-            const w = parseFloat(document.getElementById('calcWeight').value) || 0; const h = parseFloat(document.getElementById('timeH').value) || 0; const m = parseFloat(document.getElementById('timeM').value) || 0;
-            const fid = document.getElementById('calcFilamentSelect').value;
-            let fP = parseFloat(settings.filamentPrice) || 0;
-            if (fid && fid !== 'default') { const f = filaments.find(x => x.id == fid); if (f) fP = f.price; }
-            const eP = parseFloat(settings.energyRate) || 0; const pow = parseFloat(settings.printerPower) || 0;
-            const mat = (fP / 1000) * w; const hrs = h + (m / 60); const en = ((eP * pow) / 1000) * hrs;
-            document.getElementById('displayTotalCost').textContent = formatMoney(mat + en);
-            return { total: mat + en, energy: en, weight: w, timeH: h, timeM: m };
+            const weight = parseFloat(document.getElementById('calcWeight').value) || 0;
+            const h = parseFloat(document.getElementById('timeH').value) || 0;
+            const m = parseFloat(document.getElementById('timeM').value) || 0;
+            const s = parseFloat(document.getElementById('timeS').value) || 0;
+
+            // Filamento logic
+            const filamentId = document.getElementById('calcFilamentSelect').value;
+            let filPrice = parseFloat(settings.filamentPrice) || 0;
+
+            if (filamentId && filamentId !== 'default') {
+                const selectedFilament = filaments.find(f => f.id == filamentId);
+                if (selectedFilament) filPrice = selectedFilament.price;
+            }
+
+            const enPrice = parseFloat(settings.energyRate) || 0;
+            const power = parseFloat(settings.printerPower) || 0;
+
+            const matCost = (filPrice / 1000) * weight;
+            const hours = h + (m / 60) + (s / 3600);
+            const enCost = ((enPrice * power) / 1000) * hours;
+            const total = matCost + enCost;
+
+            document.getElementById('displayTotalCost').textContent = formatMoney(total);
+
+            // 100% PROFIT LOGIC
+            const suggestedPrice = total * 2;
+            const suggestDisplay = document.getElementById('displaySuggestedPrice');
+            if (suggestDisplay) {
+                suggestDisplay.textContent = formatMoney(suggestedPrice);
+            }
+
+            return { total, energy: enCost };
         }
 
-        function transferCostToModel() {
-            const d = calculateCost(); if (d.total <= 0) { alert("Simule primeiro."); return; }
-            switchTab('models'); resetModelForm();
-            document.getElementById('regProdCost').value = d.total.toFixed(2);
-            document.getElementById('regProdEnergyCost').value = d.energy.toFixed(4);
-            document.getElementById('regProdWeight').value = d.weight;
-            document.getElementById('regProdTimeH').value = d.timeH;
-            document.getElementById('regProdTimeM').value = d.timeM;
-            const fid = document.getElementById('calcFilamentSelect').value;
-            if (fid) document.getElementById('regProdFilament').value = fid;
-            document.getElementById('regProdName').focus();
+        // --- CALCULATOR (MODELS TAB) ---
+        function calculateModelFormCost() {
+            const weight = parseFloat(document.getElementById('regProdWeight').value) || 0;
+            const timeH = parseFloat(document.getElementById('regProdTimeH').value) || 0;
+            const timeM = parseFloat(document.getElementById('regProdTimeM').value) || 0;
+            const filamentId = document.getElementById('regProdFilament').value;
+
+            if (weight === 0 && timeH === 0 && timeM === 0) return;
+
+            let filPrice = parseFloat(settings.filamentPrice) || 0;
+            if (filamentId && filamentId !== 'default') {
+                const selected = filaments.find(f => f.id == filamentId);
+                if (selected) filPrice = selected.price;
+            }
+
+            const enPrice = parseFloat(settings.energyRate) || 0;
+            const power = parseFloat(settings.printerPower) || 0;
+
+            const matCost = (filPrice / 1000) * weight;
+            const hours = timeH + (timeM / 60);
+            const enCost = ((enPrice * power) / 1000) * hours;
+
+            const total = matCost + enCost;
+
+            document.getElementById('regProdCost').value = total.toFixed(2);
+            document.getElementById('regProdEnergyCost').value = enCost.toFixed(4);
+            document.getElementById('displayEnergyCost').value = enCost.toFixed(4);
         }
 
-        function saveConfig() { settings.filamentPrice = document.getElementById('cfgFilament').value; settings.energyRate = document.getElementById('cfgEnergy').value; settings.printerPower = document.getElementById('cfgPower').value; saveData(); }
+        function saveConfig() {
+            const cfgFilament = document.getElementById('cfgFilament');
+            if (cfgFilament) settings.filamentPrice = cfgFilament.value; // Save fallback
+
+            settings.energyRate = document.getElementById('cfgEnergy').value;
+            settings.printerPower = document.getElementById('cfgPower').value;
+            saveData();
+        }
+
         function updateKPIs() {
             const paid = sales.filter(s => s.paid); let rev = 0; let cost = 0; let items = 0; let en = 0;
             paid.forEach(s => { const q = parseInt(s.qty) || 1; rev += (parseFloat(s.price) || 0) * q; cost += (parseFloat(s.cost) || 0) * q; items += q; });
