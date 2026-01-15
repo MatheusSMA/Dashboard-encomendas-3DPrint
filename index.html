@@ -82,6 +82,7 @@
             background-color: #d1d5db;
         }
 
+        /* Status Badge Styles */
         .status-badge {
             font-size: 0.65rem;
             padding: 2px 6px;
@@ -158,12 +159,25 @@
             max-width: 90vw;
             object-fit: contain;
         }
+
+        /* Barra de progresso do filamento */
+        .filament-progress {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #e5e7eb;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .filament-bar {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
     </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen flex flex-col relative">
 
-    <!-- Loading Overlay -->
     <div id="loadingOverlay"
         class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
@@ -185,7 +199,6 @@
         <p id="carouselCaption" class="absolute bottom-4 text-white font-medium text-lg"></p>
     </div>
 
-    <!-- Navegação Superior -->
     <nav class="bg-white shadow-md z-10 sticky top-0">
         <div class="max-w-6xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
@@ -230,7 +243,7 @@
 
     <div class="max-w-6xl mx-auto w-full p-4 sm:p-6 flex-grow">
 
-        <!-- ======================= VIEW: VENDAS ======================= -->
+        <!-- VIEW: VENDAS -->
         <div id="view-sales" class="view-section">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Coluna Esquerda: Formulário -->
@@ -288,14 +301,16 @@
                         </div>
                     </div>
 
-                    <!-- Orçamento Rápido (Somente Estimativa) -->
+                    <!-- Calculadora Rápida -->
                     <div class="bg-white p-5 rounded-lg shadow border border-yellow-200 relative">
                         <div
                             class="absolute top-0 right-0 bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg uppercase">
-                            Estimativa</div>
+                            Simulação Rápida</div>
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2 text-sm"><i
                                 class="fas fa-calculator mr-2 text-yellow-600"></i>Orçamento Rápido</h2>
                         <div class="space-y-3 text-sm">
+
+                            <!-- Seletor de Filamento -->
                             <div>
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Filamento Utilizado</label>
                                 <select id="calcFilamentSelect" onchange="calculateCost()"
@@ -303,6 +318,7 @@
                                     <option value="">Carregando filamentos...</option>
                                 </select>
                             </div>
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="text-xs text-gray-500 block mb-1">Peso (g)</label>
@@ -409,7 +425,6 @@
                                 <p class="text-xs font-bold text-blue-800 mb-3 uppercase flex items-center gap-2">
                                     <i class="fas fa-calculator"></i> Definição de Custo de Produção
                                 </p>
-
                                 <div class="mb-3">
                                     <label class="text-xs font-bold text-gray-500 block mb-1">Filamento
                                         Utilizado</label>
@@ -419,7 +434,6 @@
                                         <option value="">Selecione...</option>
                                     </select>
                                 </div>
-
                                 <div class="grid grid-cols-2 gap-3 mb-2">
                                     <div>
                                         <label class="text-xs font-bold text-gray-500 block mb-1">Peso (g)</label>
@@ -439,29 +453,41 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Resultado Custo -->
                                 <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-blue-200">
                                     <div>
-                                        <label class="text-[10px] font-bold text-gray-500 block">Custo Total</label>
-                                        <input type="number" id="regProdCost" step="0.01" placeholder="0,00"
+                                        <label class="text-[10px] font-bold text-gray-500 block">Custo Estimado</label>
+                                        <input type="text" id="calcPreviewCost"
                                             class="w-full p-1 bg-transparent border-none font-bold text-lg text-gray-800 focus:ring-0"
-                                            readonly>
+                                            readonly value="R$ 0,00">
                                     </div>
                                     <div>
-                                        <label class="text-[10px] font-bold text-gray-400 block">Energia
-                                            (Incluso)</label>
-                                        <input type="number" id="displayEnergyCost" step="0.0001" placeholder="0,00"
+                                        <label class="text-[10px] font-bold text-gray-400 block">Energia (Est.)</label>
+                                        <input type="text" id="calcPreviewEnergy"
                                             class="w-full p-1 bg-transparent border-none text-sm text-gray-500 focus:ring-0"
-                                            readonly>
+                                            readonly value="R$ 0,00">
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="mt-4">
-                                <label class="text-xs font-bold text-gray-500 block mb-1">Venda Sugerida (R$)</label>
-                                <input type="number" id="regProdPrice" step="0.01" placeholder="0,00"
-                                    class="w-full p-2 border-2 border-green-100 rounded focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800">
+                            <div class="grid grid-cols-2 gap-3 mt-4">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1">Custo Final (R$)</label>
+                                    <input type="number" id="regProdCost" step="0.01" placeholder="0,00"
+                                        class="w-full p-2 border rounded bg-gray-50 outline-none font-bold text-gray-700">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1">Venda Sugerida
+                                        (R$)</label>
+                                    <input type="number" id="regProdPrice" step="0.01" placeholder="0,00"
+                                        class="w-full p-2 border rounded outline-none">
+                                </div>
+                            </div>
+
+                            <div class="bg-yellow-50 p-2 rounded border border-yellow-100">
+                                <label class="text-xs font-bold text-yellow-800 block mb-1">Custo Energia (Incluso no
+                                    Total)</label>
+                                <input type="number" id="displayEnergyCost" step="0.0001" placeholder="0,00"
+                                    class="w-full p-2 border border-yellow-200 rounded text-sm bg-white outline-none">
                             </div>
 
                             <button onclick="saveProduct()" id="btnSaveModel"
@@ -672,23 +698,23 @@
         let viewModeModels = 'list';
         let chartFinanceInstance = null;
         let chartProductsInstance = null;
-        let currentModelImages = [];
+        let currentModelImages = []; let currentModelImagesLoaded = false;
 
         // INIT
         document.addEventListener('DOMContentLoaded', () => {
             loadLocal();
-            // Fallback: only update if elements exist
             const cfgFilament = document.getElementById('cfgFilament');
             if (cfgFilament) cfgFilament.value = settings.filamentPrice;
-
             document.getElementById('cfgEnergy').value = settings.energyRate;
             document.getElementById('cfgPower').value = settings.printerPower;
 
+            // Render components
             renderFilamentsTable();
             updateFilamentDropdown();
             renderFilamentOptionsForModel();
+            refreshUI(); // Ensure local data is visible first
 
-            if (cloudUrl) syncFromCloud(true); else refreshUI();
+            if (cloudUrl) syncFromCloud(true);
         });
 
         function loadLocal() {
@@ -714,32 +740,13 @@
         }
 
         // CAROUSEL
-        let currentCarouselImages = [];
-        let currentCarouselIndex = 0;
-        function openCarousel(images, caption) {
-            if (!images || images.length === 0) return;
-            currentCarouselImages = images;
-            currentCarouselIndex = 0;
-            updateCarouselView();
-            document.getElementById('carouselCaption').textContent = caption || '';
-            document.getElementById('carouselModal').classList.remove('hidden');
-        }
+        let currentCarouselImages = []; let currentCarouselIndex = 0;
+        function openCarousel(imgs, cap) { if (!imgs || imgs.length === 0) return; currentCarouselImages = imgs; currentCarouselIndex = 0; updateCarouselView(); document.getElementById('carouselCaption').textContent = cap || ''; document.getElementById('carouselModal').classList.remove('hidden'); }
         function closeCarousel() { document.getElementById('carouselModal').classList.add('hidden'); }
         function nextImage() { currentCarouselIndex = (currentCarouselIndex + 1) % currentCarouselImages.length; updateCarouselView(); }
         function prevImage() { currentCarouselIndex = (currentCarouselIndex - 1 + currentCarouselImages.length) % currentCarouselImages.length; updateCarouselView(); }
-        function updateCarouselView() {
-            const img = document.getElementById('carouselImage'); img.src = currentCarouselImages[currentCarouselIndex];
-            const dotsContainer = document.getElementById('carouselIndicators'); dotsContainer.innerHTML = '';
-            if (currentCarouselImages.length > 1) {
-                currentCarouselImages.forEach((_, idx) => {
-                    const dot = document.createElement('div');
-                    dot.className = `w-3 h-3 rounded-full cursor-pointer ${idx === currentCarouselIndex ? 'bg-white' : 'bg-gray-500'}`;
-                    dot.onclick = () => { currentCarouselIndex = idx; updateCarouselView(); };
-                    dotsContainer.appendChild(dot);
-                });
-            }
-        }
-        function openProductCarousel(id) { const prod = products.find(p => p.id == id); if (prod && prod.images && prod.images.length > 0) openCarousel(prod.images, prod.name); }
+        function updateCarouselView() { const img = document.getElementById('carouselImage'); img.src = currentCarouselImages[currentCarouselIndex]; const dots = document.getElementById('carouselIndicators'); dots.innerHTML = ''; if (currentCarouselImages.length > 1) { currentCarouselImages.forEach((_, i) => { const d = document.createElement('div'); d.className = `w-3 h-3 rounded-full cursor-pointer ${i === currentCarouselIndex ? 'bg-white' : 'bg-gray-500'}`; d.onclick = () => { currentCarouselIndex = i; updateCarouselView(); }; dots.appendChild(d); }); } }
+        function openProductCarousel(id) { const p = products.find(x => x.id == id); if (p && p.images && p.images.length > 0) openCarousel(p.images, p.name); }
         function openSaleProductCarousel() { const id = document.getElementById('productDropdown').value; if (id) openProductCarousel(id); }
 
         // FILAMENTS
@@ -776,7 +783,13 @@
         }
 
         function deleteFilament(id) {
-            if (confirm("Excluir este filamento?")) { filaments = filaments.filter(f => f.id != id); saveData(); renderFilamentsTable(); updateFilamentDropdown(); renderFilamentOptionsForModel(); }
+            if (confirm("Excluir este filamento?")) {
+                filaments = filaments.filter(f => f.id != id);
+                saveData();
+                renderFilamentsTable();
+                updateFilamentDropdown();
+                renderFilamentOptionsForModel();
+            }
         }
 
         function manualAdjustFilament(id) {
@@ -866,6 +879,8 @@
             document.getElementById('regProdCost').value = total.toFixed(2);
             document.getElementById('regProdEnergyCost').value = enCost.toFixed(4);
             document.getElementById('displayEnergyCost').value = enCost.toFixed(4);
+            document.getElementById('calcPreviewCost').value = formatMoney(total);
+            document.getElementById('calcPreviewEnergy').value = formatMoney(enCost);
         }
 
         // --- IMAGE HANDLING (COMPRESSION) ---
@@ -1259,12 +1274,60 @@
             alert("Venda registrada!");
         }
 
-        function updateSaleQty(id, delta) { const s = sales.find(s => s.id == id); if (s) { const n = (parseInt(s.qty) || 1) + delta; if (n > 0) { s.qty = n; saveData(); renderSalesTable(); updateKPIs(); } else if (confirm("Remover?")) deleteSale(id); } }
-        function editSaleCustomer(id) { const s = sales.find(s => s.id == id); if (s) { const n = prompt("Novo nome:", s.customer); if (n !== null) { s.customer = n.trim() || "Consumidor Final"; saveData(); renderSalesTable(); updateCustomerDatalist(); } } }
-        function toggleDelivered(id) { const s = sales.find(s => s.id == id); if (s) { s.delivered = !s.delivered; saveData(); renderSalesTable(); } }
-        function togglePaid(id) { const s = sales.find(s => s.id == id); if (s) { s.paid = !s.paid; saveData(); renderSalesTable(); updateKPIs(); } }
-        function deleteSale(id) { if (confirm("Excluir?")) { sales = sales.filter(s => s.id != id); saveData(); renderSalesTable(); updateKPIs(); updateCustomerDatalist(); } }
-        function updateSaleInput() { const p = products.find(p => p.id == document.getElementById('productDropdown').value); const div = document.getElementById('saleProductImg'); if (p) { document.getElementById('finalSalePrice').value = (parseFloat(p.price) || 0).toFixed(2); const t = (p.images && p.images[0]) || p.image; div.style.backgroundImage = t ? `url('${t}')` : 'none'; } else div.style.backgroundImage = 'none'; }
+        function updateSaleQty(id, delta) {
+            const sale = sales.find(s => s.id == id);
+            if (sale) {
+                const newQty = (parseInt(sale.qty) || 1) + delta;
+                if (newQty > 0) {
+                    sale.qty = newQty;
+                    saveData();
+                    renderSalesTable();
+                    updateKPIs();
+                } else if (confirm("Remover este item?")) {
+                    deleteSale(id);
+                }
+            }
+        }
+
+        function editSaleCustomer(id) {
+            const sale = sales.find(s => s.id == id);
+            if (sale) {
+                const newName = prompt("Novo nome do cliente:", sale.customer);
+                if (newName !== null) { sale.customer = newName.trim() || "Consumidor Final"; saveData(); renderSalesTable(); updateCustomerDatalist(); }
+            }
+        }
+
+        function toggleDelivered(id) {
+            const sale = sales.find(s => s.id == id);
+            if (sale) { sale.delivered = !sale.delivered; saveData(); renderSalesTable(); }
+        }
+
+        function togglePaid(id) {
+            const sale = sales.find(s => s.id == id);
+            if (sale) { sale.paid = !sale.paid; saveData(); renderSalesTable(); updateKPIs(); }
+        }
+
+        function deleteSale(id) {
+            if (confirm("Excluir venda?")) { sales = sales.filter(s => s.id != id); saveData(); renderSalesTable(); updateKPIs(); updateCustomerDatalist(); }
+        }
+
+        function updateSaleInput() {
+            const id = document.getElementById('productDropdown').value;
+            const prod = products.find(p => p.id == id);
+            const imgDiv = document.getElementById('saleProductImg');
+
+            if (prod) {
+                document.getElementById('finalSalePrice').value = (parseFloat(prod.price) || 0).toFixed(2);
+                const thumb = (prod.images && prod.images.length > 0) ? prod.images[0] : (prod.image || '');
+                if (thumb) {
+                    imgDiv.style.backgroundImage = `url('${thumb}')`;
+                } else {
+                    imgDiv.style.backgroundImage = 'none';
+                }
+            } else {
+                imgDiv.style.backgroundImage = 'none';
+            }
+        }
 
         function saveProduct() {
             const id = document.getElementById('editModelId').value;
@@ -1295,9 +1358,8 @@
             saveData(); resetModelForm(); renderModelsTable(); updateDropdown(); updateKPIs();
         }
 
-        let currentModelImagesLoaded = false;
         function editModel(id) {
-            const p = products.find(p => p.id == id); if (!p) return;
+            const p = products.find(x => x.id == id); if (!p) return;
             document.getElementById('regProdName').value = p.name;
             document.getElementById('regProdCost').value = p.cost;
             document.getElementById('regProdPrice').value = p.price;
@@ -1318,23 +1380,29 @@
             document.getElementById('btnCancelEdit').classList.remove('hidden');
             switchTab('models');
         }
-        function deleteModel(id) { if (confirm("Excluir?")) { products = products.filter(p => p.id != id); saveData(); renderModelsTable(); updateDropdown(); } }
+
+        function deleteModel(id) {
+            if (confirm("Excluir modelo?")) { products = products.filter(p => p.id != id); saveData(); renderModelsTable(); updateDropdown(); }
+        }
+
         function resetModelForm() {
-            ['regProdName', 'regProdCost', 'regProdPrice', 'regProdEnergyCost', 'regProdWeight', 'regProdTimeH', 'regProdTimeM', 'regProdFilament', 'editModelId', 'modelImageInput', 'modelImageBase64'].forEach(id => document.getElementById(id).value = '');
+            ['regProdName', 'regProdCost', 'regProdPrice', 'regProdEnergyCost', 'displayEnergyCost', 'regProdWeight', 'regProdTimeH', 'regProdTimeM', 'regProdFilament', 'editModelId', 'modelImageInput', 'modelImageBase64'].forEach(i => {
+                const el = document.getElementById(i);
+                if (el) el.value = '';
+            });
             currentModelImages = []; renderImagePreviewList(); currentModelImagesLoaded = false;
             document.getElementById('formTitle').innerHTML = 'Novo';
             document.getElementById('btnSaveModel').textContent = "Cadastrar";
             document.getElementById('btnCancelEdit').classList.add('hidden');
+            if (document.getElementById('calcPreviewCost')) document.getElementById('calcPreviewCost').value = 'R$ 0,00';
+            if (document.getElementById('calcPreviewEnergy')) document.getElementById('calcPreviewEnergy').value = 'R$ 0,00';
         }
 
-        // --- CALCULATOR (SALES TAB - QUICK QUOTE) ---
         function calculateCost() {
             const weight = parseFloat(document.getElementById('calcWeight').value) || 0;
             const h = parseFloat(document.getElementById('timeH').value) || 0;
             const m = parseFloat(document.getElementById('timeM').value) || 0;
             const s = parseFloat(document.getElementById('timeS').value) || 0;
-
-            // Filamento logic
             const filamentId = document.getElementById('calcFilamentSelect').value;
             let filPrice = parseFloat(settings.filamentPrice) || 0;
 
@@ -1353,48 +1421,33 @@
 
             document.getElementById('displayTotalCost').textContent = formatMoney(total);
 
-            // 100% PROFIT LOGIC
-            const suggestedPrice = total * 2;
             const suggestDisplay = document.getElementById('displaySuggestedPrice');
             if (suggestDisplay) {
-                suggestDisplay.textContent = formatMoney(suggestedPrice);
+                suggestDisplay.textContent = formatMoney(total * 2);
             }
 
             return { total, energy: enCost };
         }
 
-        // --- CALCULATOR (MODELS TAB) ---
-        function calculateModelFormCost() {
-            const weight = parseFloat(document.getElementById('regProdWeight').value) || 0;
-            const timeH = parseFloat(document.getElementById('regProdTimeH').value) || 0;
-            const timeM = parseFloat(document.getElementById('regProdTimeM').value) || 0;
-            const filamentId = document.getElementById('regProdFilament').value;
-
-            if (weight === 0 && timeH === 0 && timeM === 0) return;
-
-            let filPrice = parseFloat(settings.filamentPrice) || 0;
-            if (filamentId && filamentId !== 'default') {
-                const selected = filaments.find(f => f.id == filamentId);
-                if (selected) filPrice = selected.price;
-            }
-
-            const enPrice = parseFloat(settings.energyRate) || 0;
-            const power = parseFloat(settings.printerPower) || 0;
-
-            const matCost = (filPrice / 1000) * weight;
-            const hours = timeH + (timeM / 60);
-            const enCost = ((enPrice * power) / 1000) * hours;
-
-            const total = matCost + enCost;
-
-            document.getElementById('regProdCost').value = total.toFixed(2);
-            document.getElementById('regProdEnergyCost').value = enCost.toFixed(4);
-            document.getElementById('displayEnergyCost').value = enCost.toFixed(4);
+        function transferCostToModel() {
+            const costData = calculateCost();
+            if (costData.total <= 0) { alert("Simule um custo primeiro."); return; }
+            switchTab('models');
+            resetModelForm();
+            document.getElementById('regProdCost').value = costData.total.toFixed(2);
+            document.getElementById('regProdEnergyCost').value = costData.energy.toFixed(4);
+            document.getElementById('regProdWeight').value = document.getElementById('calcWeight').value;
+            document.getElementById('regProdTimeH').value = document.getElementById('timeH').value;
+            document.getElementById('regProdTimeM').value = document.getElementById('timeM').value;
+            const fid = document.getElementById('calcFilamentSelect').value;
+            if (fid && document.getElementById('regProdFilament')) document.getElementById('regProdFilament').value = fid;
+            document.getElementById('regProdName').focus();
+            if (typeof calculateModelFormCost === 'function') calculateModelFormCost();
         }
 
         function saveConfig() {
             const cfgFilament = document.getElementById('cfgFilament');
-            if (cfgFilament) settings.filamentPrice = cfgFilament.value; // Save fallback
+            if (cfgFilament) settings.filamentPrice = cfgFilament.value;
 
             settings.energyRate = document.getElementById('cfgEnergy').value;
             settings.printerPower = document.getElementById('cfgPower').value;
@@ -1402,28 +1455,165 @@
         }
 
         function updateKPIs() {
-            const paid = sales.filter(s => s.paid); let rev = 0; let cost = 0; let items = 0; let en = 0;
-            paid.forEach(s => { const q = parseInt(s.qty) || 1; rev += (parseFloat(s.price) || 0) * q; cost += (parseFloat(s.cost) || 0) * q; items += q; });
-            sales.forEach(s => { const q = parseInt(s.qty) || 1; en += (parseFloat(s.energyCost) || 0) * q; });
-            const prof = rev - cost; const kwh = en / (parseFloat(settings.energyRate) || 1);
-            document.getElementById('kpiRevenue').textContent = formatMoney(rev); document.getElementById('kpiCost').textContent = formatMoney(cost); document.getElementById('kpiProfit').textContent = formatMoney(prof); document.getElementById('kpiCount').textContent = items; document.getElementById('kpiEnergy').textContent = formatMoney(en); document.getElementById('kpiEnergyKwh').textContent = kwh.toFixed(1) + " kWh"; document.getElementById('totalProfitDisplay').textContent = formatMoney(prof);
-            updateCharts(rev, cost, prof, paid);
+            const paidSales = sales.filter(s => s.paid);
+            const allSales = sales;
+
+            let revenue = 0; let cost = 0; let totalItems = 0; let totalEnergyCost = 0;
+
+            paidSales.forEach(s => {
+                const q = parseInt(s.qty) || 1;
+                revenue += (parseFloat(s.price) || 0) * q;
+                cost += (parseFloat(s.cost) || 0) * q;
+                totalItems += q;
+            });
+
+            allSales.forEach(s => {
+                const q = parseInt(s.qty) || 1;
+                totalEnergyCost += (parseFloat(s.energyCost) || 0) * q;
+            });
+
+            const profit = revenue - cost;
+            const rate = parseFloat(settings.energyRate) || 1;
+            const kwhEst = totalEnergyCost / rate;
+
+            document.getElementById('kpiRevenue').textContent = formatMoney(revenue);
+            document.getElementById('kpiCost').textContent = formatMoney(cost);
+            document.getElementById('kpiProfit').textContent = formatMoney(profit);
+            document.getElementById('kpiCount').textContent = totalItems;
+            document.getElementById('kpiEnergy').textContent = formatMoney(totalEnergyCost);
+            document.getElementById('kpiEnergyKwh').textContent = kwhEst.toFixed(1) + " kWh estimados";
+            document.getElementById('totalProfitDisplay').textContent = formatMoney(profit);
+
+            updateCharts(revenue, cost, profit, paidSales);
         }
-        function updateCharts(r, c, p, paid) {
-            if (typeof Chart === 'undefined') return; const ctx1 = document.getElementById('chartFinance').getContext('2d'); if (chartFinanceInstance) chartFinanceInstance.destroy(); chartFinanceInstance = new Chart(ctx1, { type: 'doughnut', data: { labels: ['Lucro', 'Custos'], datasets: [{ data: [p > 0 ? p : 0, c], backgroundColor: ['#10b981', '#ef4444'] }] }, options: { maintainAspectRatio: false } });
-            const counts = {}; paid.forEach(s => { const n = s.name || "Desc."; const q = parseInt(s.qty) || 1; counts[n] = (counts[n] || 0) + q; }); const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5); const ctx2 = document.getElementById('chartProducts').getContext('2d'); if (chartProductsInstance) chartProductsInstance.destroy(); chartProductsInstance = new Chart(ctx2, { type: 'bar', data: { labels: sorted.map(i => i[0]), datasets: [{ label: 'Qtd', data: sorted.map(i => i[1]), backgroundColor: '#3b82f6' }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+
+        function updateCharts(revenue, cost, profit, paidSales) {
+            if (typeof Chart === 'undefined') return;
+            const ctx1 = document.getElementById('chartFinance').getContext('2d');
+            if (chartFinanceInstance) chartFinanceInstance.destroy();
+            chartFinanceInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Lucro', 'Custos'],
+                    datasets: [{ data: [profit > 0 ? profit : 0, cost], backgroundColor: ['#10b981', '#ef4444'] }]
+                },
+                options: { maintainAspectRatio: false }
+            });
+            const productCounts = {};
+            paidSales.forEach(s => {
+                const n = s.name || "Desc."; const q = parseInt(s.qty) || 1;
+                productCounts[n] = (productCounts[n] || 0) + q;
+            });
+            const sortedProducts = Object.entries(productCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const ctx2 = document.getElementById('chartProducts').getContext('2d');
+            if (chartProductsInstance) chartProductsInstance.destroy();
+            chartProductsInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: sortedProducts.map(i => i[0]),
+                    datasets: [{ label: 'Qtd Vendida', data: sortedProducts.map(i => i[1]), backgroundColor: '#3b82f6' }]
+                },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
         }
-        function recalculateEnergyHistory() { if (!confirm("Atualizar histórico?")) return; let c = 0; sales.forEach(s => { const p = products.find(x => x.name === s.name); if (p && p.energyCost) { s.energyCost = parseFloat(p.energyCost); c++; } }); saveData(); updateKPIs(); alert("Atualizado: " + c); }
-        function saveData() { localStorage.setItem('3d_products', JSON.stringify(products)); localStorage.setItem('3d_sales', JSON.stringify(sales)); localStorage.setItem('3d_filaments', JSON.stringify(filaments)); localStorage.setItem('3d_settings', JSON.stringify(settings)); if (cloudUrl) syncToCloud(true); }
-        async function syncToCloud(a) { if (!cloudUrl) return; updateCloudStatus('saving'); try { await fetch(cloudUrl, { method: 'POST', body: JSON.stringify({ action: "save", data: { products, sales, settings, filaments } }) }); updateCloudStatus('saved'); if (!a) alert("Salvo!"); } catch (e) { console.error(e); updateCloudStatus('error'); } }
-        async function syncFromCloud(a) { if (!cloudUrl) { if (!a) alert("Sem URL"); return; } if (!a) showLoading("Baixando..."); try { const r = await fetch(cloudUrl + "?action=load"); const j = await r.json(); if (j.data) { products = j.data.products || []; sales = j.data.sales || []; filaments = j.data.filaments || []; if (j.data.settings) settings = j.data.settings; saveData(); refreshUI(); if (!a) alert("Ok!"); } } catch (e) { console.error(e); if (!a) alert("Erro"); } finally { hideLoading(); } }
-        function switchTab(id) { document.querySelectorAll('.view-section').forEach(e => e.classList.add('hidden')); document.getElementById('view-' + id).classList.remove('hidden'); document.querySelectorAll('nav button').forEach(b => { b.classList.remove('tab-active'); b.classList.add('tab-inactive'); }); document.getElementById('tab-' + id).classList.add('tab-active'); document.getElementById('tab-' + id).classList.remove('tab-inactive'); if (id === 'dashboard') updateKPIs(); if (id === 'sales') calculateCost(); }
-        function formatMoney(v) { return (parseFloat(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-        function updateCloudStatus(s) { const e = document.getElementById('cloudStatus'); if (s === 'saving') e.innerHTML = '<i class="fas fa-sync fa-spin text-blue-500"></i> Salvando...'; else if (s === 'saved') e.innerHTML = '<i class="fas fa-check-circle text-green-500"></i> Salvo'; else if (s === 'error') e.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500"></i> Erro'; else e.innerHTML = '<i class="fas fa-hdd"></i> Local'; }
+
+        function recalculateEnergyHistory() {
+            if (!confirm("Isso vai atualizar o custo de energia de TODAS as vendas passadas baseando-se no cadastro atual dos modelos. Continuar?")) return;
+
+            let count = 0;
+            sales.forEach(s => {
+                const prod = products.find(p => p.name === s.name);
+                if (prod && prod.energyCost) {
+                    s.energyCost = parseFloat(prod.energyCost);
+                    count++;
+                }
+            });
+
+            saveData();
+            updateKPIs();
+            alert(`Sucesso! ${count} vendas foram atualizadas com o custo de energia atual.`);
+        }
+
+        function saveData() {
+            localStorage.setItem('3d_products', JSON.stringify(products));
+            localStorage.setItem('3d_sales', JSON.stringify(sales));
+            localStorage.setItem('3d_settings', JSON.stringify(settings));
+            if (cloudUrl) syncToCloud(true);
+        }
+
+        async function syncToCloud(isAuto) {
+            if (!cloudUrl) return;
+            updateCloudStatus('saving');
+            const payload = { action: "save", data: { products, sales, settings, filaments } };
+            try {
+                await fetch(cloudUrl, { method: 'POST', body: JSON.stringify(payload) });
+                updateCloudStatus('saved');
+                if (!isAuto) alert("Salvo na nuvem!");
+            } catch (e) { console.error(e); updateCloudStatus('error'); }
+        }
+
+        async function syncFromCloud(isAuto) {
+            if (!cloudUrl) { if (!isAuto) alert("Sem URL."); return; }
+            if (!isAuto) showLoading("Baixando...");
+            try {
+                const res = await fetch(cloudUrl + "?action=load");
+                const json = await res.json();
+                if (json.data) {
+                    products = json.data.products || [];
+                    sales = json.data.sales || [];
+                    if (json.data.settings) settings = json.data.settings;
+                    localStorage.setItem('3d_products', JSON.stringify(products));
+                    localStorage.setItem('3d_sales', JSON.stringify(sales));
+                    localStorage.setItem('3d_settings', JSON.stringify(settings));
+                    refreshUI();
+                    if (!isAuto) alert("Atualizado!");
+                }
+            } catch (e) { console.error(e); if (!isAuto) alert("Erro ao baixar."); }
+            finally { hideLoading(); }
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + id).classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(b => {
+                b.classList.remove('tab-active');
+                b.classList.add('tab-inactive');
+            });
+            document.getElementById('tab-' + id).classList.add('tab-active');
+            document.getElementById('tab-' + id).classList.remove('tab-inactive');
+            if (id === 'dashboard') updateKPIs();
+            if (id === 'sales') calculateCost();
+        }
+
+        function formatMoney(value) {
+            if (typeof value !== 'number') value = parseFloat(value) || 0;
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function updateCloudStatus(status) {
+            const el = document.getElementById('cloudStatus');
+            if (status === 'saving') el.innerHTML = '<i class="fas fa-sync fa-spin text-blue-500"></i> <span class="text-blue-500">Salvando...</span>';
+            else if (status === 'saved') el.innerHTML = '<i class="fas fa-check-circle text-green-500"></i> <span class="text-green-600">Salvo</span>';
+            else if (status === 'error') el.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500"></i> <span class="text-red-500">Erro</span>';
+            else el.innerHTML = '<i class="fas fa-hdd"></i> Local';
+        }
+
         function showLoading(t) { document.getElementById('loadingText').innerText = t; document.getElementById('loadingOverlay').classList.remove('hidden'); }
         function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
-        function exportData() { const s = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products, sales, settings, filaments })); const a = document.createElement('a'); a.href = s; a.download = "backup_3d.json"; a.click(); }
-        function importData() { const f = document.getElementById('importFile').files[0]; if (!f) return; const r = new FileReader(); r.onload = function (e) { const d = JSON.parse(e.target.result); if (d.products) { products = d.products; sales = d.sales; settings = d.settings; filaments = d.filaments || []; saveData(); refreshUI(); alert("Restaurado!"); } }; r.readAsText(f); }
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products, sales, settings, filaments }));
+            const a = document.createElement('a'); a.href = dataStr; a.download = "backup_3d.json"; a.click();
+        }
+        function importData() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+            const r = new FileReader();
+            r.onload = function (e) {
+                const d = JSON.parse(e.target.result);
+                if (d.products) { products = d.products; sales = d.sales; settings = d.settings; filaments = d.filaments || []; saveData(); refreshUI(); alert("Restaurado!"); }
+            };
+            r.readAsText(file);
+        }
         function clearAllData() { if (confirm("Apagar tudo?")) { localStorage.clear(); location.reload(); } }
     </script>
 </body>
