@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Vendas 3D</title>
+    <!-- Corrige o erro de favicon 404 -->
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Adicionando Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -45,10 +47,11 @@
         }
 
         #loadingOverlay {
-            background-color: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
         }
 
+        /* Transição suave para o acordeão */
         .group-details {
             transition: max-height 0.3s ease-out;
             overflow: hidden;
@@ -60,6 +63,7 @@
             transition: max-height 0.5s ease-in;
         }
 
+        /* Botões pequenos de quantidade */
         .qty-btn {
             width: 24px;
             height: 24px;
@@ -78,6 +82,7 @@
             background-color: #d1d5db;
         }
 
+        /* Status Badge Styles */
         .status-badge {
             font-size: 0.65rem;
             padding: 2px 6px;
@@ -109,9 +114,11 @@
             border: 1px solid #bfdbfe;
         }
 
+        /* Estilo da Imagem no Card */
         .card-img-container {
             width: 100%;
             padding-top: 100%;
+            /* 1:1 Aspect Ratio */
             position: relative;
             background-color: #f9fafb;
             overflow: hidden;
@@ -142,6 +149,7 @@
             vertical-align: middle;
         }
 
+        /* Carousel Modal Styles */
         #carouselModal {
             background-color: rgba(0, 0, 0, 0.95);
         }
@@ -152,6 +160,7 @@
             object-fit: contain;
         }
 
+        /* Barra de progresso do filamento */
         .filament-progress {
             height: 6px;
             border-radius: 3px;
@@ -171,9 +180,8 @@
 
     <div id="loadingOverlay"
         class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center transition-opacity duration-300">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-        <p class="text-blue-800 font-bold text-lg uppercase tracking-wider" id="loadingText">Conectando ao Banco de
-            Dados...</p>
+        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+        <p class="text-blue-800 font-bold text-sm uppercase tracking-wider" id="loadingText">Carregando...</p>
     </div>
 
     <!-- Carousel Modal -->
@@ -202,8 +210,8 @@
                         <span class="font-bold text-xl text-gray-800 leading-tight hidden sm:block">Gerenciador
                             3D</span>
                         <span id="cloudStatus"
-                            class="text-[10px] font-bold text-blue-500 uppercase tracking-wide flex items-center gap-1">
-                            <i class="fas fa-wifi"></i> Online
+                            class="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                            <i class="fas fa-hdd"></i> Local
                         </span>
                     </div>
                 </div>
@@ -238,11 +246,13 @@
         <!-- VIEW: VENDAS -->
         <div id="view-sales" class="view-section">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Coluna Esquerda: Formulário -->
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2"><i
                                 class="fas fa-cart-plus mr-2 text-blue-600"></i>Nova Venda</h2>
                         <div class="space-y-4">
+                            <!-- Cliente -->
                             <div>
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Cliente</label>
                                 <div class="relative">
@@ -254,6 +264,8 @@
                                     <datalist id="customerList"></datalist>
                                 </div>
                             </div>
+
+                            <!-- Produto -->
                             <div>
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Modelo / Produto</label>
                                 <div class="flex gap-2">
@@ -266,6 +278,8 @@
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- Qtd e Preço -->
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="text-xs font-bold text-gray-500 block mb-1">Qtd</label>
@@ -279,13 +293,15 @@
                                         class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none bg-white font-bold text-gray-700">
                                 </div>
                             </div>
+
                             <button onclick="addSale()"
                                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition shadow-md flex justify-center items-center gap-2 mt-2">
                                 <i class="fas fa-plus"></i> Registrar Venda
                             </button>
                         </div>
                     </div>
-                    
+
+                    <!-- Calculadora Rápida -->
                     <div class="bg-white p-5 rounded-lg shadow border border-yellow-200 relative">
                         <div
                             class="absolute top-0 right-0 bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg uppercase">
@@ -293,6 +309,8 @@
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2 text-sm"><i
                                 class="fas fa-calculator mr-2 text-yellow-600"></i>Orçamento Rápido</h2>
                         <div class="space-y-3 text-sm">
+
+                            <!-- Seletor de Filamento -->
                             <div>
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Filamento Utilizado</label>
                                 <select id="calcFilamentSelect" onchange="calculateCost()"
@@ -300,6 +318,7 @@
                                     <option value="">Carregando filamentos...</option>
                                 </select>
                             </div>
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="text-xs text-gray-500 block mb-1">Peso (g)</label>
@@ -335,6 +354,7 @@
                     </div>
                 </div>
 
+                <!-- Coluna Direita: Histórico -->
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden h-full flex flex-col">
                         <div class="bg-gray-50 p-4 border-b flex justify-between items-center flex-wrap gap-2">
@@ -350,7 +370,11 @@
                                 <span id="totalProfitDisplay" class="font-bold text-green-600 text-lg">R$ 0,00</span>
                             </div>
                         </div>
-                        <div id="salesListContainer" class="overflow-x-auto flex-grow bg-gray-50 p-2"></div>
+
+                        <div id="salesListContainer" class="overflow-x-auto flex-grow bg-gray-50 p-2">
+                            <!-- JS renderiza tabela aqui -->
+                        </div>
+
                         <div id="emptyState" class="p-12 text-center text-gray-400 hidden">
                             <i class="fas fa-clipboard-list text-5xl mb-3 text-gray-200"></i>
                             <p>Nenhuma venda registrada.</p>
@@ -535,6 +559,7 @@
                                         class="w-full h-10 p-1 border rounded cursor-pointer">
                                 </div>
                             </div>
+                            <!-- New Fields for Stock Tracking -->
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="text-xs font-bold text-gray-500 block mb-1">Peso Total Carretel
@@ -543,14 +568,18 @@
                                         class="w-full p-2 border rounded bg-gray-50 outline-none">
                                 </div>
                             </div>
+
                             <button onclick="saveFilament()" id="btnSaveFilament"
-                                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded transition">Salvar
-                                Filamento</button>
+                                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded transition">
+                                Salvar Filamento
+                            </button>
                             <button onclick="resetFilamentForm()" id="btnCancelFilEdit"
                                 class="w-full text-xs text-red-500 hover:underline hidden mt-2">Cancelar Edição</button>
                         </div>
                     </div>
                 </div>
+
+                <!-- Lista de Filamentos -->
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                         <div class="bg-gray-50 p-4 border-b">
@@ -569,8 +598,9 @@
                                 </thead>
                                 <tbody id="filamentsTableBody"></tbody>
                             </table>
-                            <div id="emptyFilaments" class="p-8 text-center text-gray-400 hidden">Nenhum filamento
-                                cadastrado.</div>
+                            <div id="emptyFilaments" class="p-8 text-center text-gray-400 hidden">
+                                Nenhum filamento cadastrado.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -621,20 +651,28 @@
                         <button onclick="exportData()"
                             class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 rounded text-sm">Baixar
                             Arquivo JSON</button>
-                        <div class="relative"><input type="file" id="importFile" accept=".json"
+                        <div class="relative">
+                            <input type="file" id="importFile" accept=".json"
                                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                onchange="importData()" /><button
+                                onchange="importData()" />
+                            <button
                                 class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded text-sm pointer-events-none">Restaurar
-                                de Arquivo</button></div>
+                                de Arquivo</button>
+                        </div>
                     </div>
                 </div>
+
                 <div class="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
                     <h2 class="font-bold text-lg text-yellow-800 mb-2"><i class="fas fa-bolt mr-2"></i>Reparar Histórico
-                    </h2>
+                        de Energia</h2>
+                    <p class="text-sm text-yellow-700 mb-4">Se seus gráficos de energia estão zerados, clique abaixo
+                        para atualizar todas as vendas passadas com o custo de energia atual do modelo cadastrado.</p>
                     <button onclick="recalculateEnergyHistory()"
-                        class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-sm transition">Atualizar
-                        Histórico Agora</button>
+                        class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-sm transition">
+                        Atualizar Histórico Agora
+                    </button>
                 </div>
+
                 <div class="bg-red-50 p-6 rounded-lg border border-red-200 text-center mt-8">
                     <button onclick="clearAllData()"
                         class="text-red-600 border border-red-600 hover:bg-red-600 hover:text-white font-bold py-2 px-6 rounded transition text-sm">Resetar
@@ -642,17 +680,27 @@
                 </div>
             </div>
         </div>
+
     </div>
 
     <script>
+        // CONFIG
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwu1W_8GWcS-b7XzQrzDpgZjFDebqtmoyj3Htc8gCQQptxufyI2hgBmFek_zrmXonpbGg/exec";
-        let products = []; let sales = []; let filaments = [];
+
+        // STATE
+        let products = [];
+        let sales = [];
+        let filaments = [];
         let settings = { filamentPrice: '', energyRate: '', printerPower: '' };
         let cloudUrl = GOOGLE_SHEETS_URL || localStorage.getItem('3d_cloud_url') || '';
-        let viewMode = 'table'; let viewModeModels = 'list';
-        let chartFinanceInstance = null; let chartProductsInstance = null;
-        let currentModelImages = []; let currentModelImagesLoaded = false;
+        let viewMode = 'table';
+        let viewModeModels = 'list';
+        let chartFinanceInstance = null;
+        let chartProductsInstance = null;
+        let currentModelImages = [];
+        let currentModelImagesLoaded = false; // Declarado apenas uma vez
 
+        // INIT
         document.addEventListener('DOMContentLoaded', () => {
             // REMOVE LOAD LOCAL, FORCE CLOUD
             const cfgFilament = document.getElementById('cfgFilament');
@@ -777,10 +825,9 @@
             saveData(); resetModelForm(); renderModelsTable(); updateDropdown(); updateKPIs();
         }
 
-        let currentModelImagesLoaded = false;
         function editModel(id) {
             const p = products.find(x => x.id == id); if (!p) return;
-            document.getElementById('regProdName').value = p.name; document.getElementById('regProdCost').value = p.cost; document.getElementById('regProdPrice').value = p.price; document.getElementById('regProdEnergyCost').value = p.energyCost || 0; document.getElementById('editModelId').value = p.id; document.getElementById('regProdWeight').value = p.weight || ""; document.getElementById('regProdTimeH').value = p.timeH || ""; document.getElementById('regProdTimeM').value = p.timeM || ""; if (p.filamentId) document.getElementById('regProdFilament').value = p.filamentId;
+            document.getElementById('regProdName').value = p.name; document.getElementById('regProdCost').value = p.cost; document.getElementById('regProdPrice').value = p.price; document.getElementById('regProdEnergyCost').value = p.energyCost || 0; document.getElementById('displayEnergyCost').value = (p.energyCost || 0).toFixed(4); document.getElementById('editModelId').value = p.id; document.getElementById('regProdWeight').value = p.weight || ""; document.getElementById('regProdTimeH').value = p.timeH || ""; document.getElementById('regProdTimeM').value = p.timeM || ""; if (p.filamentId) document.getElementById('regProdFilament').value = p.filamentId;
             currentModelImages = []; if (p.images && p.images.length > 0) currentModelImages = [...p.images]; else if (p.image) currentModelImages = [p.image];
             renderImagePreviewList(); currentModelImagesLoaded = true; document.getElementById('formTitle').innerHTML = 'Editar'; document.getElementById('btnSaveModel').textContent = "Atualizar"; document.getElementById('btnCancelEdit').classList.remove('hidden'); switchTab('models');
         }
