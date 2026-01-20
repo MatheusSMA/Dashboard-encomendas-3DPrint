@@ -260,10 +260,17 @@
                                     <div id="saleProductImg"
                                         class="w-10 h-10 bg-gray-100 rounded border flex-shrink-0 bg-cover bg-center cursor-pointer"
                                         style="background-image: none;" onclick="openSaleProductCarousel()"></div>
-                                    <select id="productDropdown" onchange="updateSaleInput()"
-                                        class="w-full p-2 border rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="">Carregando...</option>
-                                    </select>
+                                    <div class="w-full">
+                                        <select id="productDropdown" onchange="updateSaleInput()"
+                                            class="w-full p-2 border rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none mb-2">
+                                            <option value="">Carregando...</option>
+                                        </select>
+                                        <!-- VARIATION DROPDOWN (Hidden by default) -->
+                                        <select id="saleVariation" onchange="updateSaleInputFromVariation()"
+                                            class="w-full p-2 border border-blue-200 rounded bg-blue-50 focus:ring-2 focus:ring-blue-500 outline-none text-sm hidden">
+                                            <option value="">Padrão</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -294,8 +301,10 @@
                                 </div>
                             </div>
 
-                            <!-- Campo Oculto para Custo Calculado -->
+                            <!-- Campos Ocultos -->
                             <input type="hidden" id="calculatedSaleCost" value="0">
+                            <input type="hidden" id="calculatedSaleEnergy" value="0">
+                            <input type="hidden" id="selectedVariationName" value="">
 
                             <button onclick="addSale()"
                                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition shadow-md flex justify-center items-center gap-2 mt-2">
@@ -399,6 +408,7 @@
                                     class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                             </div>
 
+                            <!-- Upload de Imagem -->
                             <div class="mb-4">
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Fotos do Produto</label>
                                 <div class="relative w-full h-32 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden hover:border-blue-400 transition cursor-pointer"
@@ -413,6 +423,7 @@
                                 <div id="imageGalleryPreview" class="flex gap-2 mt-2 overflow-x-auto pb-2"></div>
                             </div>
 
+                            <!-- CALCULADORA DE CUSTO (INTEGRADA) -->
                             <div class="bg-blue-50 p-4 rounded border border-blue-100 shadow-sm">
                                 <p class="text-xs font-bold text-blue-800 mb-3 uppercase flex items-center gap-2">
                                     <i class="fas fa-calculator"></i> Definição de Custo de Produção
@@ -476,8 +487,8 @@
                             </div>
 
                             <div class="bg-yellow-50 p-2 rounded border border-yellow-100">
-                                <label class="text-xs font-bold text-yellow-800 block mb-1">Custo Energia
-                                    (Incluso)</label>
+                                <label class="text-xs font-bold text-yellow-800 block mb-1">Custo Energia (Incluso no
+                                    Total)</label>
                                 <input type="number" id="displayEnergyCost" step="0.0001" placeholder="0,00"
                                     class="w-full p-2 border border-yellow-200 rounded text-sm bg-white outline-none">
                             </div>
@@ -486,6 +497,23 @@
                                 class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition shadow-md mt-2">
                                 Salvar Modelo
                             </button>
+
+                            <!-- SEÇÃO DE VARIAÇÕES -->
+                            <hr class="border-gray-200 my-4">
+                            <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <p class="text-xs font-bold text-gray-500 uppercase"><i
+                                            class="fas fa-code-branch"></i> Variações (Submodelos)</p>
+                                    <button onclick="addVariationRow()"
+                                        class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"><i
+                                            class="fas fa-plus"></i> Add</button>
+                                </div>
+                                <div id="variationsContainer" class="space-y-2">
+                                    <!-- Variation Rows will be added here -->
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-2">Adicione tamanhos ou estilos diferentes. O
+                                    custo será calculado com base no filamento selecionado acima.</p>
+                            </div>
 
                             <hr class="border-gray-200 my-4">
                             <div class="bg-gray-50 p-3 rounded border border-gray-200">
@@ -514,8 +542,11 @@
                                 <i class="fas fa-th-large"></i> Ver Cards
                             </button>
                         </div>
-                        <div id="modelsContainer" class="p-2"></div>
-                        <div id="emptyModels" class="p-8 text-center text-gray-400 hidden">Nenhum modelo cadastrado.
+                        <div id="modelsContainer" class="p-2">
+                            <!-- JS renderiza lista ou grid aqui -->
+                        </div>
+                        <div id="emptyModels" class="p-8 text-center text-gray-400 hidden">
+                            Nenhum modelo cadastrado.
                         </div>
                     </div>
                 </div>
@@ -661,24 +692,29 @@
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwu1W_8GWcS-b7XzQrzDpgZjFDebqtmoyj3Htc8gCQQptxufyI2hgBmFek_zrmXonpbGg/exec";
         let products = []; let sales = []; let filaments = [];
         let settings = { filamentPrice: '', energyRate: '', printerPower: '' };
-        let cloudUrl = GOOGLE_SHEETS_URL;
+        let cloudUrl = GOOGLE_SHEETS_URL || localStorage.getItem('3d_cloud_url') || '';
         let viewMode = 'table'; let viewModeModels = 'list';
         let chartFinanceInstance = null; let chartProductsInstance = null;
         let currentModelImages = []; let currentModelImagesLoaded = false;
+        let currentVariations = []; // To store variations during edit
 
         document.addEventListener('DOMContentLoaded', () => {
-            // FORCE CLOUD SYNC
-            if (cloudUrl) syncFromCloud(true);
-            else alert("URL não configurada no código.");
-        });
-
-        function refreshUI() {
-            // UI elements population
+            // REMOVE LOAD LOCAL, FORCE CLOUD
             const cfgFilament = document.getElementById('cfgFilament');
             if (cfgFilament) cfgFilament.value = settings.filamentPrice;
             document.getElementById('cfgEnergy').value = settings.energyRate;
             document.getElementById('cfgPower').value = settings.printerPower;
+            renderFilamentsTable(); updateFilamentDropdown(); renderFilamentOptionsForModel();
 
+            // FORCE LOAD FROM CLOUD ALWAYS
+            if (cloudUrl) syncFromCloud(true);
+            else {
+                alert("URL não configurada no código.");
+                refreshUI(); // Show empty UI
+            }
+        });
+
+        function refreshUI() {
             updateDropdown(); updateCustomerDatalist(); renderSalesTable(); renderModelsTable(); renderFilamentsTable();
             updateFilamentDropdown(); renderFilamentOptionsForModel(); updateKPIs();
         }
@@ -710,6 +746,68 @@
             document.getElementById('regProdCost').value = tot.toFixed(2); document.getElementById('regProdEnergyCost').value = en.toFixed(4); document.getElementById('displayEnergyCost').value = en.toFixed(4); document.getElementById('calcPreviewCost').value = formatMoney(tot); document.getElementById('calcPreviewEnergy').value = formatMoney(en);
         }
 
+        // --- VARIATIONS LOGIC ---
+        function addVariationRow(data = {}) {
+            const id = data.id || Date.now().toString(36) + Math.random().toString(36).substr(2);
+            const name = data.name || "";
+            const weight = data.weight || "";
+            const timeH = data.timeH || "";
+            const timeM = data.timeM || "";
+            const price = data.price || "";
+
+            // Add to array
+            const variation = { id, name, weight, timeH, timeM, price };
+            if (!data.id) currentVariations.push(variation); // Only push if new
+
+            renderVariationsList();
+        }
+
+        function removeVariation(id) {
+            currentVariations = currentVariations.filter(v => v.id !== id);
+            renderVariationsList();
+        }
+
+        function updateVariationData(id, field, value) {
+            const idx = currentVariations.findIndex(v => v.id === id);
+            if (idx !== -1) {
+                currentVariations[idx][field] = value;
+            }
+        }
+
+        function renderVariationsList() {
+            const container = document.getElementById('variationsContainer');
+            container.innerHTML = "";
+
+            currentVariations.forEach(v => {
+                const div = document.createElement('div');
+                div.className = "flex flex-wrap gap-2 items-end bg-white p-2 border rounded shadow-sm relative";
+                div.innerHTML = `
+                     <div class="flex-1 min-w-[120px]">
+                         <label class="text-[10px] text-gray-500">Nome (ex: 50%)</label>
+                         <input type="text" value="${v.name}" oninput="updateVariationData('${v.id}', 'name', this.value)" class="w-full p-1 border rounded text-xs">
+                     </div>
+                     <div class="w-16">
+                         <label class="text-[10px] text-gray-500">Peso(g)</label>
+                         <input type="number" value="${v.weight}" oninput="updateVariationData('${v.id}', 'weight', this.value)" class="w-full p-1 border rounded text-xs text-center">
+                     </div>
+                     <div class="w-20">
+                         <label class="text-[10px] text-gray-500">Tempo(H:M)</label>
+                         <div class="flex gap-1">
+                             <input type="number" value="${v.timeH}" oninput="updateVariationData('${v.id}', 'timeH', this.value)" class="w-full p-1 border rounded text-xs text-center" placeholder="H">
+                             <input type="number" value="${v.timeM}" oninput="updateVariationData('${v.id}', 'timeM', this.value)" class="w-full p-1 border rounded text-xs text-center" placeholder="M">
+                         </div>
+                     </div>
+                     <div class="w-20">
+                         <label class="text-[10px] text-gray-500">Venda R$</label>
+                         <input type="number" value="${v.price}" oninput="updateVariationData('${v.id}', 'price', this.value)" class="w-full p-1 border rounded text-xs text-center font-bold text-green-600">
+                     </div>
+                     <button onclick="removeVariation('${v.id}')" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-times"></i></button>
+                 `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- IMAGE HANDLING (COMPRESSION) ---
         function handleImageUpload(input) { const f = input.files[0]; if (!f) return; const r = new FileReader(); r.onload = function (e) { const i = new Image(); i.onload = function () { const c = document.createElement('canvas'); const max = 400; let w = i.width; let h = i.height; if (w > max) { h *= max / w; w = max; } c.width = w; c.height = h; const ctx = c.getContext('2d'); ctx.drawImage(i, 0, 0, w, h); const d = c.toDataURL('image/jpeg', 0.6); currentModelImages.push(d); renderImagePreviewList(); input.value = ''; }; i.src = e.target.result; }; r.readAsDataURL(f); }
         function renderImagePreviewList() { const c = document.getElementById('imageGalleryPreview'); c.innerHTML = ''; currentModelImages.forEach((src, i) => { const d = document.createElement('div'); d.className = "relative flex-shrink-0 w-16 h-16 border rounded overflow-hidden group"; d.innerHTML = `<img src="${src}" class="w-full h-full object-cover"><button onclick="removeImage(${i})" class="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">&times;</button>`; c.appendChild(d); }); }
         function removeImage(i) { currentModelImages.splice(i, 1); renderImagePreviewList(); }
@@ -744,14 +842,14 @@
                 let h = `<table class="w-full text-sm text-left text-gray-500 rounded-lg overflow-hidden"><thead class="text-xs text-gray-700 uppercase bg-gray-200 sticky top-0"><tr><th class="px-4 py-3 whitespace-nowrap">Produto</th><th class="px-4 py-3 text-center">Qtd</th><th class="px-4 py-3 text-right">Total</th><th class="px-4 py-3 text-center">Status</th><th class="px-4 py-3 text-center">Pago</th><th class="px-4 py-3 text-center">Entregue</th><th class="px-4 py-3 text-center">Ação</th></tr></thead><tbody class="bg-white">`;
                 [...sales].sort((a, b) => b.id - a.id).forEach(s => {
                     const q = parseInt(s.qty) || 1; const t = (parseFloat(s.price) || 0) * q; const sid = String(s.id).replace(/'/g, "\\'"); const p = products.find(x => x.name === s.name); const th = (p && p.images && p.images.length > 0) ? p.images[0] : (p && p.image ? p.image : ''); const img = th ? `<img src="${th}" class="w-6 h-6 rounded border mr-1 inline-block cursor-pointer" onclick="openProductCarousel('${p ? p.id : ''}')">` : '';
-                    h += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3"><div class="font-bold text-gray-800 flex items-center gap-1 flex-wrap">${s.customer || "Consumidor Final"}<button onclick="editSaleCustomer('${sid}')" class="text-[10px] text-blue-400 hover:text-blue-600"><i class="fas fa-pen"></i></button></div><div class="text-xs text-gray-500 flex items-center">${img} ${s.name}</div></td><td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-2"><button onclick="updateSaleQty('${sid}',-1)" class="qty-btn">-</button><span class="font-bold text-gray-600 w-4">${q}</span><button onclick="updateSaleQty('${sid}',1)" class="qty-btn">+</button></div></td><td class="px-4 py-3 text-right text-gray-800 font-medium">${formatMoney(t)}</td><td class="px-4 py-3 text-center" onclick="toggleStatus('${sid}')">${getStatusBadge(s.status)}</td><td class="px-4 py-3 text-center"><label class="cursor-pointer inline-flex items-center"><input type="checkbox" class="hidden" onchange="togglePaid('${sid}')" ${s.paid ? 'checked' : ''}><div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center transition-colors ${s.paid ? 'bg-green-500 border-green-500' : ''}">${s.paid ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}</div></label></td><td class="px-4 py-3 text-center"><button onclick="toggleDelivered('${sid}')" class="${s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400'} transition-colors" title="Entrega"><i class="fas fa-truck"></i></button></td><td class="px-4 py-3 text-center"><button onclick="deleteSale('${sid}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td></tr>`;
+                    h += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3"><div class="font-bold text-gray-800 flex items-center gap-1 flex-wrap">${s.customer || "Consumidor Final"}<button onclick="editSaleCustomer('${sid}')" class="text-[10px] text-blue-400 hover:text-blue-600"><i class="fas fa-pen"></i></button></div><div class="text-xs text-gray-500 flex items-center">${img} ${s.name} ${s.variationName ? `<span class="ml-1 bg-gray-200 px-1 rounded text-[9px]">${s.variationName}</span>` : ''}</div></td><td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-2"><button onclick="updateSaleQty('${sid}',-1)" class="qty-btn">-</button><span class="font-bold text-gray-600 w-4">${q}</span><button onclick="updateSaleQty('${sid}',1)" class="qty-btn">+</button></div></td><td class="px-4 py-3 text-right text-gray-800 font-medium">${formatMoney(t)}</td><td class="px-4 py-3 text-center" onclick="toggleStatus('${sid}')">${getStatusBadge(s.status)}</td><td class="px-4 py-3 text-center"><label class="cursor-pointer inline-flex items-center"><input type="checkbox" class="hidden" onchange="togglePaid('${sid}')" ${s.paid ? 'checked' : ''}><div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center transition-colors ${s.paid ? 'bg-green-500 border-green-500' : ''}">${s.paid ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}</div></label></td><td class="px-4 py-3 text-center"><button onclick="toggleDelivered('${sid}')" class="${s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400'} transition-colors" title="Entrega"><i class="fas fa-truck"></i></button></td><td class="px-4 py-3 text-center"><button onclick="deleteSale('${sid}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td></tr>`;
                 }); h += `</tbody></table>`; c.innerHTML = h;
             } else {
                 const g = {}; sales.forEach(s => { const c = s.customer || "Outros"; if (!g[c]) g[c] = []; g[c].push(s); });
                 Object.keys(g).sort().forEach(cus => {
                     const gs = g[cus]; const ti = gs.reduce((s, i) => s + (parseInt(i.qty) || 1), 0); const tv = gs.reduce((s, i) => s + ((parseFloat(i.price) || 0) * (parseInt(i.qty) || 1)), 0); const pe = gs.filter(s => !s.paid).length;
                     let h = `<div class="mb-3 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"><div onclick="this.parentElement.classList.toggle('group-open')" class="p-4 bg-white cursor-pointer hover:bg-gray-50 flex justify-between items-center select-none"><div class="flex items-center gap-3"><div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center font-bold">${cus.charAt(0).toUpperCase()}</div><div><h3 class="font-bold text-gray-800">${cus}</h3><p class="text-xs text-gray-500">${ti} itens • ${formatMoney(tv)}</p></div></div><div class="flex items-center gap-3">${pe > 0 ? `<span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full font-bold">${pe} pendentes</span>` : `<span class="text-green-500 text-xs font-bold"><i class="fas fa-check-circle"></i> OK</span>`}<i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 transform group-open:rotate-180"></i></div></div><div class="group-details bg-gray-50 border-t border-gray-100"><table class="w-full text-xs text-left text-gray-600"><thead class="uppercase bg-gray-100 text-gray-500"><tr><th class="px-4 py-2">Item</th><th class="px-4 py-2 text-center">Qtd</th><th class="px-4 py-2 text-center">Status</th><th class="px-4 py-2 text-center">Pago</th><th class="px-4 py-2 text-center">Del</th><th class="px-4 py-2 text-center">X</th></tr></thead><tbody>`;
-                    gs.forEach(s => { const q = parseInt(s.qty) || 1; const sid = String(s.id).replace(/'/g, "\\'"); h += `<tr class="border-b border-gray-100"><td class="px-4 py-2 font-medium">${s.name}</td><td class="px-4 py-2 text-center"><div class="flex items-center justify-center gap-1"><button onclick="updateSaleQty('${sid}',-1)" class="w-4 h-4 bg-gray-200 text-gray-600 rounded flex items-center justify-center font-bold hover:bg-gray-300">-</button><span class="w-3">${q}</span><button onclick="updateSaleQty('${sid}',1)" class="w-4 h-4 bg-gray-200 text-gray-600 rounded flex items-center justify-center font-bold hover:bg-gray-300">+</button></div></td><td class="px-4 py-2 text-center cursor-pointer" onclick="toggleStatus('${sid}')">${getStatusBadge(s.status)}</td><td class="px-4 py-2 text-center cursor-pointer" onclick="togglePaid('${sid}')">${s.paid ? '<span class="text-green-600 font-bold">Sim</span>' : '<span class="text-red-400">Não</span>'}</td><td class="px-4 py-2 text-center"><button onclick="toggleDelivered('${sid}')" class="${s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400'}" title="Entregue"><i class="fas fa-truck"></i></button></td><td class="px-4 py-2 text-center"><button onclick="deleteSale('${sid}')" class="text-gray-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td></tr>`; }); h += `</tbody></table></div></div>`; c.insertAdjacentHTML('beforeend', h);
+                    gs.forEach(s => { const q = parseInt(s.qty) || 1; const sid = String(s.id).replace(/'/g, "\\'"); h += `<tr class="border-b border-gray-100"><td class="px-4 py-2 font-medium">${s.name} ${s.variationName ? `<span class="text-[9px] bg-gray-100 px-1 rounded">${s.variationName}</span>` : ''}</td><td class="px-4 py-2 text-center"><div class="flex items-center justify-center gap-1"><button onclick="updateSaleQty('${sid}',-1)" class="w-4 h-4 bg-gray-200 text-gray-600 rounded flex items-center justify-center font-bold hover:bg-gray-300">-</button><span class="w-3">${q}</span><button onclick="updateSaleQty('${sid}',1)" class="w-4 h-4 bg-gray-200 text-gray-600 rounded flex items-center justify-center font-bold hover:bg-gray-300">+</button></div></td><td class="px-4 py-2 text-center cursor-pointer" onclick="toggleStatus('${sid}')">${getStatusBadge(s.status)}</td><td class="px-4 py-2 text-center cursor-pointer" onclick="togglePaid('${sid}')">${s.paid ? '<span class="text-green-600 font-bold">Sim</span>' : '<span class="text-red-400">Não</span>'}</td><td class="px-4 py-2 text-center"><button onclick="toggleDelivered('${sid}')" class="${s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400'}" title="Entregue"><i class="fas fa-truck"></i></button></td><td class="px-4 py-2 text-center"><button onclick="deleteSale('${sid}')" class="text-gray-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td></tr>`; }); h += `</tbody></table></div></div>`; c.insertAdjacentHTML('beforeend', h);
                 });
             }
         }
@@ -780,19 +878,31 @@
             const filamentId = document.getElementById('saleFilament').value;
             const preview = document.getElementById('saleCostPreview');
             const hiddenCost = document.getElementById('calculatedSaleCost');
+            const hiddenEnergy = document.getElementById('calculatedSaleEnergy');
+            const variationSelect = document.getElementById('saleVariation');
+            const variationId = variationSelect ? variationSelect.value : "";
 
             const prod = products.find(p => p.id == prodId);
             if (!prod) {
                 preview.textContent = "Custo: R$ 0,00";
                 hiddenCost.value = 0;
+                hiddenEnergy.value = 0;
                 return;
             }
 
-            // Calc logic similar to model form
-            const weight = parseFloat(prod.weight) || 0;
-            // timeH/timeM might be missing in old records, treat as 0
-            const timeH = parseFloat(prod.timeH) || 0;
-            const timeM = parseFloat(prod.timeM) || 0;
+            // Determine Weight/Time source (Main or Variation)
+            let weight = parseFloat(prod.weight) || 0;
+            let timeH = parseFloat(prod.timeH) || 0;
+            let timeM = parseFloat(prod.timeM) || 0;
+
+            if (variationId && prod.variations) {
+                const variant = prod.variations.find(v => v.id === variationId);
+                if (variant) {
+                    weight = parseFloat(variant.weight) || 0;
+                    timeH = parseFloat(variant.timeH) || 0;
+                    timeM = parseFloat(variant.timeM) || 0;
+                }
+            }
 
             let filPrice = parseFloat(settings.filamentPrice) || 0; // Default global
 
@@ -810,13 +920,35 @@
             const totalCost = matCost + enCost;
 
             // If model has no weight data (legacy), fallback to registered cost
-            if (weight === 0 && timeH === 0 && timeM === 0) {
+            if (weight === 0 && timeH === 0 && timeM === 0 && !variationId) {
                 const legacyCost = parseFloat(prod.cost) || 0;
                 preview.textContent = `Custo (Fixo): ${formatMoney(legacyCost)}`;
                 hiddenCost.value = legacyCost;
+                hiddenEnergy.value = parseFloat(prod.energyCost) || 0;
             } else {
                 preview.textContent = `Custo: ${formatMoney(totalCost)}`;
                 hiddenCost.value = totalCost.toFixed(2);
+                hiddenEnergy.value = enCost.toFixed(4);
+            }
+        }
+
+        function updateSaleInputFromVariation() {
+            const prodId = document.getElementById('productDropdown').value;
+            const varId = document.getElementById('saleVariation').value;
+            const prod = products.find(p => p.id == prodId);
+
+            if (prod) {
+                if (varId && prod.variations) {
+                    const variant = prod.variations.find(v => v.id === varId);
+                    if (variant) {
+                        document.getElementById('finalSalePrice').value = parseFloat(variant.price).toFixed(2);
+                        document.getElementById('selectedVariationName').value = variant.name;
+                    }
+                } else {
+                    document.getElementById('finalSalePrice').value = (parseFloat(prod.price) || 0).toFixed(2);
+                    document.getElementById('selectedVariationName').value = "";
+                }
+                recalcSaleCost(); // Recalculate based on new weight/time
             }
         }
 
@@ -825,16 +957,19 @@
             const fp = parseFloat(document.getElementById('finalSalePrice').value);
             const qty = parseInt(document.getElementById('saleQty').value);
             const cus = document.getElementById('saleCustomer').value.trim();
-            const filId = document.getElementById('saleFilament').value; // Get selected filament ID
-            const calcCost = parseFloat(document.getElementById('calculatedSaleCost').value); // Get calculated cost
+            const filId = document.getElementById('saleFilament').value;
+            const calcCost = parseFloat(document.getElementById('calculatedSaleCost').value);
+            const calcEnergy = parseFloat(document.getElementById('calculatedSaleEnergy').value);
+            const varName = document.getElementById('selectedVariationName').value;
+            const varId = document.getElementById('saleVariation').value;
 
             if (!id || isNaN(fp)) { alert("Selecione produto/preço"); return; }
             if (isNaN(qty) || qty < 1) { alert("Qtd inválida"); return; }
 
             const p = products.find(x => x.id == id); if (!p) { alert("Produto não encontrado"); return; }
 
-            // Use calculated cost if available (new logic), else fallback to product cost
             const finalCost = calcCost > 0 ? calcCost : (parseFloat(p.cost) || 0);
+            const finalEnergy = calcEnergy > 0 ? calcEnergy : (parseFloat(p.energyCost) || 0);
 
             const s = {
                 id: Date.now(),
@@ -843,24 +978,32 @@
                 price: fp,
                 qty: qty,
                 customer: cus || "Consumidor Final",
-                energyCost: parseFloat(p.energyCost) || 0, // Ideally re-calculate this too, but for now keep model's energy
+                energyCost: finalEnergy,
                 delivered: false,
                 paid: false,
                 status: 'waiting',
                 date: new Date().toISOString(),
-                filamentId: filId // Save which filament was used
+                filamentId: filId,
+                variationName: varName
             };
 
             sales.push(s); saveData();
 
             // DEDUCT FILAMENT STOCK
-            // Use selected filament ID if present, otherwise fallback to product default
             const targetFilamentId = filId !== 'default' ? filId : (p.filamentId || null);
 
-            if (p.weight && targetFilamentId) {
+            let weightToDeduct = 0;
+            if (varId && p.variations) {
+                const v = p.variations.find(v => v.id === varId);
+                if (v) weightToDeduct = parseFloat(v.weight) || 0;
+            } else {
+                weightToDeduct = parseFloat(p.weight) || 0;
+            }
+
+            if (weightToDeduct > 0 && targetFilamentId) {
                 const fix = filaments.findIndex(f => f.id == targetFilamentId);
                 if (fix !== -1) {
-                    filaments[fix].remainingWeight = Math.max(0, (filaments[fix].remainingWeight || filaments[fix].initialWeight) - (p.weight * qty));
+                    filaments[fix].remainingWeight = Math.max(0, (filaments[fix].remainingWeight || filaments[fix].initialWeight) - (weightToDeduct * qty));
                     saveData();
                     renderFilamentsTable();
                 }
@@ -879,6 +1022,7 @@
             const pId = document.getElementById('productDropdown').value;
             const p = products.find(x => x.id == pId);
             const d = document.getElementById('saleProductImg');
+            const variationSelect = document.getElementById('saleVariation');
 
             // 1. Populate/Update Filament Dropdown
             renderSaleFilamentOptions();
@@ -896,22 +1040,42 @@
                     filSelect.value = "default"; // or ""
                 }
 
-                // 3. Trigger Cost Recalc
+                // 3. Handle Variations
+                variationSelect.innerHTML = '<option value="">Padrão</option>';
+                document.getElementById('selectedVariationName').value = "";
+                if (p.variations && p.variations.length > 0) {
+                    variationSelect.classList.remove('hidden');
+                    p.variations.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v.id;
+                        opt.textContent = `${v.name} (R$ ${parseFloat(v.price).toFixed(2)})`;
+                        variationSelect.appendChild(opt);
+                    });
+                } else {
+                    variationSelect.classList.add('hidden');
+                }
+
+                // 4. Trigger Cost Recalc
                 recalcSaleCost();
 
             } else {
                 d.style.backgroundImage = 'none';
                 document.getElementById('saleCostPreview').textContent = "Custo: R$ 0,00";
+                variationSelect.classList.add('hidden');
             }
         }
 
         function saveProduct() {
-            const id = document.getElementById('editModelId').value; const name = document.getElementById('regProdName').value; const cost = parseFloat(document.getElementById('regProdCost').value); const price = parseFloat(document.getElementById('regProdPrice').value); const enCost = parseFloat(document.getElementById('regProdEnergyCost').value) || 0; const w = parseFloat(document.getElementById('regProdWeight').value) || 0; const th = parseFloat(document.getElementById('regProdTimeH').value) || 0; const tm = parseFloat(document.getElementById('regProdTimeM').value) || 0; const fid = document.getElementById('regProdFilament').value;
-            if (!name || isNaN(cost) || isNaN(price)) { alert("Preencha campos"); return; }
+            const id = document.getElementById('editModelId').value; const name = document.getElementById('regProdName').value; const cost = parseFloat(document.getElementById('regProdCost').value); const price = parseFloat(document.getElementById('regProdPrice').value); const energyCost = parseFloat(document.getElementById('regProdEnergyCost').value) || 0; const w = parseFloat(document.getElementById('regProdWeight').value) || 0; const th = parseFloat(document.getElementById('regProdTimeH').value) || 0; const tm = parseFloat(document.getElementById('regProdTimeM').value) || 0; const fid = document.getElementById('regProdFilament').value;
+
+            if (!name || isNaN(cost) || isNaN(price)) { alert("Preencha campos."); return; }
+
             const imgs = [...currentModelImages];
+            const vars = [...currentVariations]; // Get current variations
+
             if (id) {
-                const idx = products.findIndex(x => x.id == id); if (idx !== -1) { const old = products[idx]; const fImgs = (imgs.length > 0 || currentModelImagesLoaded) ? imgs : old.images; products[idx] = { ...old, name, cost, price, energyCost: enCost, images: fImgs, weight: w, timeH: th, timeM: tm, filamentId: fid }; sales.forEach(s => { if (s.name === old.name) { s.name = name; s.energyCost = enCost; } }); }
-            } else { products.push({ id: Date.now(), name, cost, price, energyCost: enCost, images: imgs, weight: w, timeH: th, timeM: tm, filamentId: fid }); }
+                const idx = products.findIndex(x => x.id == id); if (idx !== -1) { const old = products[idx]; const fImgs = (imgs.length > 0 || currentModelImagesLoaded) ? imgs : old.images; products[idx] = { ...old, name, cost, price, energyCost, images: fImgs, weight: w, timeH: th, timeM: tm, filamentId: fid, variations: vars }; sales.forEach(s => { if (s.name === old.name) { s.name = name; } }); }
+            } else { products.push({ id: Date.now(), name, cost, price, energyCost, images: imgs, weight: w, timeH: th, timeM: tm, filamentId: fid, variations: vars }); }
             saveData(); resetModelForm(); renderModelsTable(); updateDropdown(); updateKPIs();
         }
 
@@ -919,10 +1083,21 @@
             const p = products.find(x => x.id == id); if (!p) return;
             document.getElementById('regProdName').value = p.name; document.getElementById('regProdCost').value = p.cost; document.getElementById('regProdPrice').value = p.price; document.getElementById('regProdEnergyCost').value = p.energyCost || 0; document.getElementById('editModelId').value = p.id; document.getElementById('regProdWeight').value = p.weight || ""; document.getElementById('regProdTimeH').value = p.timeH || ""; document.getElementById('regProdTimeM').value = p.timeM || ""; if (p.filamentId) document.getElementById('regProdFilament').value = p.filamentId;
             currentModelImages = []; if (p.images && p.images.length > 0) currentModelImages = [...p.images]; else if (p.image) currentModelImages = [p.image];
-            renderImagePreviewList(); currentModelImagesLoaded = true; document.getElementById('formTitle').innerHTML = 'Editar'; document.getElementById('btnSaveModel').textContent = "Atualizar"; document.getElementById('btnCancelEdit').classList.remove('hidden'); switchTab('models');
+            renderImagePreviewList(); currentModelImagesLoaded = true;
+
+            // Load variations
+            currentVariations = p.variations ? [...p.variations] : [];
+            renderVariationsList();
+
+            document.getElementById('formTitle').innerHTML = 'Editar'; document.getElementById('btnSaveModel').textContent = "Atualizar"; document.getElementById('btnCancelEdit').classList.remove('hidden'); switchTab('models');
         }
         function deleteModel(id) { if (confirm("Excluir?")) { products = products.filter(x => x.id != id); saveData(); renderModelsTable(); updateDropdown(); } }
-        function resetModelForm() { ['regProdName', 'regProdCost', 'regProdPrice', 'regProdEnergyCost', 'displayEnergyCost', 'regProdWeight', 'regProdTimeH', 'regProdTimeM', 'regProdFilament', 'editModelId', 'modelImageInput', 'modelImageBase64'].forEach(i => document.getElementById(i).value = ''); currentModelImages = []; renderImagePreviewList(); currentModelImagesLoaded = false; document.getElementById('formTitle').innerHTML = 'Novo'; document.getElementById('btnSaveModel').textContent = "Cadastrar"; document.getElementById('btnCancelEdit').classList.add('hidden'); document.getElementById('calcPreviewCost').value = 'R$ 0,00'; document.getElementById('calcPreviewEnergy').value = 'R$ 0,00'; }
+        function resetModelForm() {
+            ['regProdName', 'regProdCost', 'regProdPrice', 'regProdEnergyCost', 'displayEnergyCost', 'regProdWeight', 'regProdTimeH', 'regProdTimeM', 'regProdFilament', 'editModelId', 'modelImageInput', 'modelImageBase64'].forEach(i => document.getElementById(i).value = '');
+            currentModelImages = []; renderImagePreviewList(); currentModelImagesLoaded = false;
+            currentVariations = []; renderVariationsList();
+            document.getElementById('formTitle').innerHTML = 'Novo'; document.getElementById('btnSaveModel').textContent = "Cadastrar"; document.getElementById('btnCancelEdit').classList.add('hidden'); document.getElementById('calcPreviewCost').value = 'R$ 0,00'; document.getElementById('calcPreviewEnergy').value = 'R$ 0,00';
+        }
 
         function calculateCost() {
             const w = parseFloat(document.getElementById('calcWeight').value) || 0; const h = parseFloat(document.getElementById('timeH').value) || 0; const m = parseFloat(document.getElementById('timeM').value) || 0; const s = parseFloat(document.getElementById('timeS').value) || 0; const fid = document.getElementById('calcFilamentSelect').value;
