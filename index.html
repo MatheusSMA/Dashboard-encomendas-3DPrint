@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Vendas 3D</title>
+    <!-- Corrige o erro de favicon 404 -->
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Adicionando Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -49,6 +51,7 @@
             backdrop-filter: blur(5px);
         }
 
+        /* Transição suave para o acordeão */
         .group-details {
             transition: max-height 0.3s ease-out;
             overflow: hidden;
@@ -60,6 +63,7 @@
             transition: max-height 0.5s ease-in;
         }
 
+        /* Botões pequenos de quantidade */
         .qty-btn {
             width: 24px;
             height: 24px;
@@ -78,6 +82,7 @@
             background-color: #d1d5db;
         }
 
+        /* Status Badge Styles */
         .status-badge {
             font-size: 0.65rem;
             padding: 2px 6px;
@@ -109,9 +114,11 @@
             border: 1px solid #bfdbfe;
         }
 
+        /* Estilo da Imagem no Card */
         .card-img-container {
             width: 100%;
             padding-top: 100%;
+            /* 1:1 Aspect Ratio */
             position: relative;
             background-color: #f9fafb;
             overflow: hidden;
@@ -142,6 +149,7 @@
             vertical-align: middle;
         }
 
+        /* Carousel Modal Styles */
         #carouselModal {
             background-color: rgba(0, 0, 0, 0.95);
         }
@@ -152,6 +160,7 @@
             object-fit: contain;
         }
 
+        /* Barra de progresso do filamento */
         .filament-progress {
             height: 6px;
             border-radius: 3px;
@@ -243,6 +252,7 @@
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2"><i
                                 class="fas fa-cart-plus mr-2 text-blue-600"></i>Nova Venda</h2>
                         <div class="space-y-4">
+                            <!-- Cliente -->
                             <div>
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Cliente</label>
                                 <div class="relative">
@@ -755,9 +765,8 @@
             const timeM = data.timeM || "";
             const price = data.price || "";
 
-            // Add to array
             const variation = { id, name, weight, timeH, timeM, price };
-            if (!data.id) currentVariations.push(variation); // Only push if new
+            if (!data.id) currentVariations.push(variation);
 
             renderVariationsList();
         }
@@ -771,7 +780,35 @@
             const idx = currentVariations.findIndex(v => v.id === id);
             if (idx !== -1) {
                 currentVariations[idx][field] = value;
+                if (['weight', 'timeH', 'timeM'].includes(field)) {
+                    const v = currentVariations[idx];
+                    const cost = calculateSpecificCost(v.weight, v.timeH, v.timeM);
+                    const el = document.getElementById(`varCost_${id}`);
+                    if (el) el.value = formatMoney(cost);
+                }
             }
+        }
+
+        function calculateSpecificCost(weight, timeH, timeM) {
+            const w = parseFloat(weight) || 0;
+            const h = parseFloat(timeH) || 0;
+            const m = parseFloat(timeM) || 0;
+
+            const fid = document.getElementById('regProdFilament').value;
+            let filPrice = parseFloat(settings.filamentPrice) || 0;
+            if (fid && fid !== 'default') {
+                const f = filaments.find(x => x.id == fid);
+                if (f) filPrice = f.price;
+            }
+
+            const ep = parseFloat(settings.energyRate) || 0;
+            const pow = parseFloat(settings.printerPower) || 0;
+
+            const mat = (filPrice / 1000) * w;
+            const hrs = h + (m / 60);
+            const en = ((ep * pow) / 1000) * hrs;
+
+            return mat + en;
         }
 
         function renderVariationsList() {
@@ -796,6 +833,10 @@
                              <input type="number" value="${v.timeH}" oninput="updateVariationData('${v.id}', 'timeH', this.value)" class="w-full p-1 border rounded text-xs text-center" placeholder="H">
                              <input type="number" value="${v.timeM}" oninput="updateVariationData('${v.id}', 'timeM', this.value)" class="w-full p-1 border rounded text-xs text-center" placeholder="M">
                          </div>
+                     </div>
+                     <div class="w-20">
+                         <label class="text-[10px] text-gray-500">Custo (Est.)</label>
+                         <input type="text" id="varCost_${v.id}" value="${formatMoney(calculateSpecificCost(v.weight, v.timeH, v.timeM))}" readonly class="w-full p-1 border rounded text-xs text-center bg-gray-100 text-gray-500">
                      </div>
                      <div class="w-20">
                          <label class="text-[10px] text-gray-500">Venda R$</label>
@@ -1066,23 +1107,27 @@
         }
 
         function saveProduct() {
-            const id = document.getElementById('editModelId').value; const name = document.getElementById('regProdName').value; const cost = parseFloat(document.getElementById('regProdCost').value); const price = parseFloat(document.getElementById('regProdPrice').value); const energyCost = parseFloat(document.getElementById('regProdEnergyCost').value) || 0; const w = parseFloat(document.getElementById('regProdWeight').value) || 0; const th = parseFloat(document.getElementById('regProdTimeH').value) || 0; const tm = parseFloat(document.getElementById('regProdTimeM').value) || 0; const fid = document.getElementById('regProdFilament').value;
+            const id = document.getElementById('editModelId').value; const name = document.getElementById('regProdName').value; const cost = parseFloat(document.getElementById('regProdCost').value); const price = parseFloat(document.getElementById('regProdPrice').value); const enCost = parseFloat(document.getElementById('regProdEnergyCost').value) || 0; const w = parseFloat(document.getElementById('regProdWeight').value) || 0; const th = parseFloat(document.getElementById('regProdTimeH').value) || 0; const tm = parseFloat(document.getElementById('regProdTimeM').value) || 0; const fid = document.getElementById('regProdFilament').value;
 
-            if (!name || isNaN(cost) || isNaN(price)) { alert("Preencha campos."); return; }
+            if (!name || isNaN(cost) || isNaN(price)) { alert("Preencha campos"); return; }
 
             const imgs = [...currentModelImages];
             const vars = [...currentVariations]; // Get current variations
 
             if (id) {
-                const idx = products.findIndex(x => x.id == id); if (idx !== -1) { const old = products[idx]; const fImgs = (imgs.length > 0 || currentModelImagesLoaded) ? imgs : old.images; products[idx] = { ...old, name, cost, price, energyCost, images: fImgs, weight: w, timeH: th, timeM: tm, filamentId: fid, variations: vars }; sales.forEach(s => { if (s.name === old.name) { s.name = name; } }); }
-            } else { products.push({ id: Date.now(), name, cost, price, energyCost, images: imgs, weight: w, timeH: th, timeM: tm, filamentId: fid, variations: vars }); }
+                const idx = products.findIndex(x => x.id == id); if (idx !== -1) { const old = products[idx]; const fImgs = (imgs.length > 0 || currentModelImagesLoaded) ? imgs : old.images; products[idx] = { ...old, name, cost, price, energyCost: enCost, images: fImgs, weight: w, timeH: th, timeM: tm, filamentId: fid, variations: vars }; sales.forEach(s => { if (s.name === old.name) { s.name = name; } }); }
+            } else { products.push({ id: Date.now(), name, cost, price, energyCost: enCost, images: imgs, weight: w, timeH: th, timeM: tm, filamentId: fid, variations: vars }); }
             saveData(); resetModelForm(); renderModelsTable(); updateDropdown(); updateKPIs();
         }
 
+        currentModelImagesLoaded = false;
         function editModel(id) {
             const p = products.find(x => x.id == id); if (!p) return;
             document.getElementById('regProdName').value = p.name; document.getElementById('regProdCost').value = p.cost; document.getElementById('regProdPrice').value = p.price; document.getElementById('regProdEnergyCost').value = p.energyCost || 0; document.getElementById('editModelId').value = p.id; document.getElementById('regProdWeight').value = p.weight || ""; document.getElementById('regProdTimeH').value = p.timeH || ""; document.getElementById('regProdTimeM').value = p.timeM || ""; if (p.filamentId) document.getElementById('regProdFilament').value = p.filamentId;
-            currentModelImages = []; if (p.images && p.images.length > 0) currentModelImages = [...p.images]; else if (p.image) currentModelImages = [p.image];
+
+            currentModelImages = [];
+            if (p.images && p.images.length > 0) currentModelImages = [...p.images];
+            else if (p.image) currentModelImages = [p.image];
             renderImagePreviewList(); currentModelImagesLoaded = true;
 
             // Load variations
