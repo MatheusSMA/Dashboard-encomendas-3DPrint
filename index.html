@@ -5,11 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Vendas 3D</title>
-    <!-- Corrige o erro de favicon 404 -->
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Adicionando Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -51,7 +49,6 @@
             backdrop-filter: blur(5px);
         }
 
-        /* Transição suave para o acordeão */
         .group-details {
             transition: max-height 0.3s ease-out;
             overflow: hidden;
@@ -63,7 +60,6 @@
             transition: max-height 0.5s ease-in;
         }
 
-        /* Botões pequenos de quantidade */
         .qty-btn {
             width: 24px;
             height: 24px;
@@ -82,7 +78,6 @@
             background-color: #d1d5db;
         }
 
-        /* Status Badge Styles */
         .status-badge {
             font-size: 0.65rem;
             padding: 2px 6px;
@@ -114,11 +109,9 @@
             border: 1px solid #bfdbfe;
         }
 
-        /* Estilo da Imagem no Card */
         .card-img-container {
             width: 100%;
             padding-top: 100%;
-            /* 1:1 Aspect Ratio */
             position: relative;
             background-color: #f9fafb;
             overflow: hidden;
@@ -149,7 +142,6 @@
             vertical-align: middle;
         }
 
-        /* Carousel Modal Styles */
         #carouselModal {
             background-color: rgba(0, 0, 0, 0.95);
         }
@@ -160,7 +152,6 @@
             object-fit: contain;
         }
 
-        /* Barra de progresso do filamento */
         .filament-progress {
             height: 6px;
             border-radius: 3px;
@@ -275,7 +266,6 @@
                                             class="w-full p-2 border rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none mb-2">
                                             <option value="">Carregando...</option>
                                         </select>
-                                        <!-- VARIATION DROPDOWN (Hidden by default) -->
                                         <select id="saleVariation" onchange="updateSaleInputFromVariation()"
                                             class="w-full p-2 border border-blue-200 rounded bg-blue-50 focus:ring-2 focus:ring-blue-500 outline-none text-sm hidden">
                                             <option value="">Padrão</option>
@@ -518,9 +508,7 @@
                                         class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"><i
                                             class="fas fa-plus"></i> Add</button>
                                 </div>
-                                <div id="variationsContainer" class="space-y-2">
-                                    <!-- Variation Rows will be added here -->
-                                </div>
+                                <div id="variationsContainer" class="space-y-2"></div>
                                 <p class="text-[10px] text-gray-400 mt-2">Adicione tamanhos ou estilos diferentes. O
                                     custo será calculado com base no filamento selecionado acima.</p>
                             </div>
@@ -552,11 +540,8 @@
                                 <i class="fas fa-th-large"></i> Ver Cards
                             </button>
                         </div>
-                        <div id="modelsContainer" class="p-2">
-                            <!-- JS renderiza lista ou grid aqui -->
-                        </div>
-                        <div id="emptyModels" class="p-8 text-center text-gray-400 hidden">
-                            Nenhum modelo cadastrado.
+                        <div id="modelsContainer" class="p-2"></div>
+                        <div id="emptyModels" class="p-8 text-center text-gray-400 hidden">Nenhum modelo cadastrado.
                         </div>
                     </div>
                 </div>
@@ -849,7 +834,7 @@
         }
 
         // --- IMAGE HANDLING (COMPRESSION) ---
-        function handleImageUpload(input) { const f = input.files[0]; if (!f) return; const r = new FileReader(); r.onload = function (e) { const i = new Image(); i.onload = function () { const c = document.createElement('canvas'); const max = 400; let w = i.width; let h = i.height; if (w > max) { h *= max / w; w = max; } c.width = w; c.height = h; const ctx = c.getContext('2d'); ctx.drawImage(i, 0, 0, w, h); const d = c.toDataURL('image/jpeg', 0.6); currentModelImages.push(d); renderImagePreviewList(); input.value = ''; }; i.src = e.target.result; }; r.readAsDataURL(f); }
+        function handleImageUpload(input) { const f = input.files[0]; if (!f) return; const r = new FileReader(); r.onload = function (e) { const i = new Image(); i.onload = function () { const c = document.createElement('canvas'); const max = 200; let w = i.width; let h = i.height; if (w > max) { h *= max / w; w = max; } c.width = w; c.height = h; const ctx = c.getContext('2d'); ctx.drawImage(i, 0, 0, w, h); const d = c.toDataURL('image/jpeg', 0.5); currentModelImages.push(d); renderImagePreviewList(); input.value = ''; }; i.src = e.target.result; }; r.readAsDataURL(f); }
         function renderImagePreviewList() { const c = document.getElementById('imageGalleryPreview'); c.innerHTML = ''; currentModelImages.forEach((src, i) => { const d = document.createElement('div'); d.className = "relative flex-shrink-0 w-16 h-16 border rounded overflow-hidden group"; d.innerHTML = `<img src="${src}" class="w-full h-full object-cover"><button onclick="removeImage(${i})" class="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">&times;</button>`; c.appendChild(d); }); }
         function removeImage(i) { currentModelImages.splice(i, 1); renderImagePreviewList(); }
 
@@ -1121,9 +1106,10 @@
         }
 
         currentModelImagesLoaded = false;
+
         function editModel(id) {
             const p = products.find(x => x.id == id); if (!p) return;
-            document.getElementById('regProdName').value = p.name; document.getElementById('regProdCost').value = p.cost; document.getElementById('regProdPrice').value = p.price; document.getElementById('regProdEnergyCost').value = p.energyCost || 0; document.getElementById('editModelId').value = p.id; document.getElementById('regProdWeight').value = p.weight || ""; document.getElementById('regProdTimeH').value = p.timeH || ""; document.getElementById('regProdTimeM').value = p.timeM || ""; if (p.filamentId) document.getElementById('regProdFilament').value = p.filamentId;
+            document.getElementById('regProdName').value = p.name; document.getElementById('regProdCost').value = p.cost; document.getElementById('regProdPrice').value = p.price; document.getElementById('regProdEnergyCost').value = p.energyCost || 0; document.getElementById('displayEnergyCost').value = (p.energyCost || 0).toFixed(4); document.getElementById('editModelId').value = p.id; document.getElementById('regProdWeight').value = p.weight || ""; document.getElementById('regProdTimeH').value = p.timeH || ""; document.getElementById('regProdTimeM').value = p.timeM || ""; if (p.filamentId) document.getElementById('regProdFilament').value = p.filamentId;
 
             currentModelImages = [];
             if (p.images && p.images.length > 0) currentModelImages = [...p.images];
