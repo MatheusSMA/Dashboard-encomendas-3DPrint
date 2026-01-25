@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Vendas 3D</title>
+    <!-- Corrige o erro de favicon 404 -->
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Adicionando Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -49,6 +51,7 @@
             backdrop-filter: blur(5px);
         }
 
+        /* Transição suave para o acordeão */
         .group-details {
             transition: max-height 0.3s ease-out;
             overflow: hidden;
@@ -60,6 +63,7 @@
             transition: max-height 0.5s ease-in;
         }
 
+        /* Botões pequenos de quantidade */
         .qty-btn {
             width: 24px;
             height: 24px;
@@ -78,6 +82,7 @@
             background-color: #d1d5db;
         }
 
+        /* Status Badge Styles */
         .status-badge {
             font-size: 0.65rem;
             padding: 2px 6px;
@@ -109,6 +114,7 @@
             border: 1px solid #bfdbfe;
         }
 
+        /* Badges de Orçamento */
         .budget-badge {
             font-size: 0.65rem;
             padding: 2px 6px;
@@ -129,9 +135,11 @@
             border: 1px solid #86efac;
         }
 
+        /* Estilo da Imagem no Card */
         .card-img-container {
             width: 100%;
             padding-top: 100%;
+            /* 1:1 Aspect Ratio */
             position: relative;
             background-color: #f9fafb;
             overflow: hidden;
@@ -162,6 +170,7 @@
             vertical-align: middle;
         }
 
+        /* Carousel Modal Styles */
         #carouselModal {
             background-color: rgba(0, 0, 0, 0.95);
         }
@@ -172,6 +181,7 @@
             object-fit: contain;
         }
 
+        /* Barra de progresso do filamento */
         .filament-progress {
             height: 6px;
             border-radius: 3px;
@@ -185,6 +195,7 @@
             transition: width 0.5s ease;
         }
 
+        /* AI Button Animation */
         @keyframes pulse-purple {
             0% {
                 box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7);
@@ -203,6 +214,7 @@
             animation: pulse-purple 2s infinite;
         }
 
+        /* Import Modal */
         #aiImportModal {
             background-color: rgba(0, 0, 0, 0.5);
         }
@@ -323,6 +335,7 @@
                         <h2 class="font-bold text-gray-700 mb-4 border-b pb-2"><i
                                 class="fas fa-cart-plus mr-2 text-blue-600"></i>Nova Venda</h2>
                         <div class="space-y-4">
+                            <!-- Cliente -->
                             <div>
                                 <label class="text-xs font-bold text-gray-500 block mb-1">Cliente</label>
                                 <input type="text" id="saleCustomer" list="customerList"
@@ -589,6 +602,7 @@
                                 Salvar Modelo
                             </button>
 
+                            <!-- SEÇÃO DE VARIAÇÕES -->
                             <hr class="border-gray-200 my-4">
                             <div class="bg-gray-50 p-3 rounded border border-gray-200">
                                 <div class="flex justify-between items-center mb-2">
@@ -786,6 +800,8 @@
 
         let products = []; let sales = []; let filaments = [];
         let settings = { filamentPrice: '', energyRate: '', printerPower: '' };
+        let geminiApiKey = GEMINI_KEY;
+        let externalTableUrl = EXTERNAL_TABLE_URL;
         let cloudUrl = GOOGLE_SHEETS_URL;
         let viewMode = 'table'; let viewModeModels = 'list';
         let chartFinanceInstance = null; let chartProductsInstance = null;
@@ -795,7 +811,7 @@
         let currentVariations = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            // REMOVE LOAD LOCAL, FORCE CLOUD
+            loadLocal();
             const cfgFilament = document.getElementById('cfgFilament');
             if (cfgFilament) cfgFilament.value = settings.filamentPrice;
             document.getElementById('cfgEnergy').value = settings.energyRate;
@@ -836,11 +852,13 @@
                 Retorne um JSON array com objetos: {customer: string, productName: string, quantity: number, budgetStatus: string (options: 'pending','sent'), productionStatus: string (options: 'waiting','printing','done'), paid: boolean}.
                 Regras: 'Enviado'='sent', 'Fazer'='pending'. 'Pago'='true'. Se não tiver info, use defaults.`;
 
-                const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
+
+                if (aiRes.status === 404) throw new Error("Modelo de IA não encontrado (404). Tente outra chave ou modelo.");
 
                 const aiData = await aiRes.json();
 
@@ -901,7 +919,7 @@
             const prompt = `Act as a data parser. Convert text to JSON array of 3D printing models. Schema: [{ "name": "String", "weight": Number, "timeH": Number, "timeM": Number, "price": Number }]`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt + "\n" + text }] }] })
@@ -934,7 +952,7 @@
             showLoading("Consultando a IA...");
             const prompt = `Extraia dados para JSON: "${userInput}". Campos: name, weight, timeH, timeM, price.`;
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -979,10 +997,7 @@
             let fp = parseFloat(settings.filamentPrice) || 0; if (fid && fid !== 'default') { const f = filaments.find(x => x.id == fid); if (f) fp = f.price; }
             const ep = parseFloat(settings.energyRate) || 0; const pow = parseFloat(settings.printerPower) || 0;
             const mat = (fp / 1000) * w; const hrs = th + (tm / 60); const en = ((ep * pow) / 1000) * hrs; const tot = mat + en;
-            document.getElementById('regProdCost').value = tot.toFixed(2); document.getElementById('regProdEnergyCost').value = en.toFixed(4);
-            if (document.getElementById('displayEnergyCost')) document.getElementById('displayEnergyCost').value = en.toFixed(4);
-            if (document.getElementById('calcPreviewCost')) document.getElementById('calcPreviewCost').value = formatMoney(tot);
-            if (document.getElementById('calcPreviewEnergy')) document.getElementById('calcPreviewEnergy').value = formatMoney(en);
+            document.getElementById('regProdCost').value = tot.toFixed(2); document.getElementById('regProdEnergyCost').value = en.toFixed(4); document.getElementById('displayEnergyCost').value = en.toFixed(4); document.getElementById('calcPreviewCost').value = formatMoney(tot); document.getElementById('calcPreviewEnergy').value = formatMoney(en);
         }
 
         // --- VARIATIONS LOGIC ---
@@ -993,12 +1008,17 @@
             const timeH = data.timeH || "";
             const timeM = data.timeM || "";
             const price = data.price || "";
+
             const variation = { id, name, weight, timeH, timeM, price };
             if (!data.id) currentVariations.push(variation);
+
             renderVariationsList();
         }
 
-        function removeVariation(id) { currentVariations = currentVariations.filter(v => v.id !== id); renderVariationsList(); }
+        function removeVariation(id) {
+            currentVariations = currentVariations.filter(v => v.id !== id);
+            renderVariationsList();
+        }
 
         function updateVariationData(id, field, value) {
             const idx = currentVariations.findIndex(v => v.id === id);
@@ -1014,21 +1034,60 @@
         }
 
         function calculateSpecificCost(weight, timeH, timeM) {
-            const w = parseFloat(weight) || 0; const h = parseFloat(timeH) || 0; const m = parseFloat(timeM) || 0;
+            const w = parseFloat(weight) || 0;
+            const h = parseFloat(timeH) || 0;
+            const m = parseFloat(timeM) || 0;
+
             const fid = document.getElementById('regProdFilament').value;
             let filPrice = parseFloat(settings.filamentPrice) || 0;
-            if (fid && fid !== 'default') { const f = filaments.find(x => x.id == fid); if (f) filPrice = f.price; }
-            const ep = parseFloat(settings.energyRate) || 0; const pow = parseFloat(settings.printerPower) || 0;
-            const mat = (filPrice / 1000) * w; const hrs = h + (m / 60); const en = ((ep * pow) / 1000) * hrs;
+            if (fid && fid !== 'default') {
+                const f = filaments.find(x => x.id == fid);
+                if (f) filPrice = f.price;
+            }
+
+            const ep = parseFloat(settings.energyRate) || 0;
+            const pow = parseFloat(settings.printerPower) || 0;
+
+            const mat = (filPrice / 1000) * w;
+            const hrs = h + (m / 60);
+            const en = ((ep * pow) / 1000) * hrs;
+
             return mat + en;
         }
 
         function renderVariationsList() {
-            const container = document.getElementById('variationsContainer'); container.innerHTML = "";
+            const container = document.getElementById('variationsContainer');
+            container.innerHTML = "";
+
             currentVariations.forEach(v => {
                 const div = document.createElement('div');
                 div.className = "flex flex-wrap gap-2 items-end bg-white p-2 border rounded shadow-sm relative";
-                div.innerHTML = `<div class="flex-1 min-w-[120px]"><label class="text-[10px] text-gray-500">Nome (ex: 50%)</label><input type="text" value="${v.name}" oninput="updateVariationData('${v.id}', 'name', this.value)" class="w-full p-1 border rounded text-xs"></div><div class="w-16"><label class="text-[10px] text-gray-500">Peso(g)</label><input type="number" value="${v.weight}" oninput="updateVariationData('${v.id}', 'weight', this.value)" class="w-full p-1 border rounded text-xs text-center"></div><div class="w-20"><label class="text-[10px] text-gray-500">Tempo(H:M)</label><div class="flex gap-1"><input type="number" value="${v.timeH}" oninput="updateVariationData('${v.id}', 'timeH', this.value)" class="w-full p-1 border rounded text-xs text-center" placeholder="H"><input type="number" value="${v.timeM}" oninput="updateVariationData('${v.id}', 'timeM', this.value)" class="w-full p-1 border rounded text-xs text-center" placeholder="M"></div></div><div class="w-20"><label class="text-[10px] text-gray-500">Custo (Est.)</label><input type="text" id="varCost_${v.id}" value="${formatMoney(calculateSpecificCost(v.weight, v.timeH, v.timeM))}" readonly class="w-full p-1 border rounded text-xs text-center bg-gray-100 text-gray-500"></div><div class="w-20"><label class="text-[10px] text-gray-500">Venda R$</label><input type="number" value="${v.price}" oninput="updateVariationData('${v.id}', 'price', this.value)" class="w-full p-1 border rounded text-xs text-center font-bold text-green-600"></div><button onclick="removeVariation('${v.id}')" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-times"></i></button>`;
+                div.innerHTML = `
+                     <div class="flex-1 min-w-[120px]">
+                         <label class="text-[10px] text-gray-500">Nome (ex: 50%)</label>
+                         <input type="text" value="${v.name}" oninput="updateVariationData('${v.id}', 'name', this.value)" class="w-full p-1 border rounded text-xs">
+                     </div>
+                     <div class="w-16">
+                         <label class="text-[10px] text-gray-500">Peso(g)</label>
+                         <input type="number" value="${v.weight}" oninput="updateVariationData('${v.id}', 'weight', this.value)" class="w-full p-1 border rounded text-xs text-center">
+                     </div>
+                     <div class="w-20">
+                         <label class="text-[10px] text-gray-500">Tempo(H:M)</label>
+                         <div class="flex gap-1">
+                             <input type="number" value="${v.timeH}" oninput="updateVariationData('${v.id}', 'timeH', this.value)" class="w-full p-1 border rounded text-xs text-center" placeholder="H">
+                             <input type="number" value="${v.timeM}" oninput="updateVariationData('${v.id}', 'timeM', this.value)" class="w-full p-1 border rounded text-xs text-center" placeholder="M">
+                         </div>
+                     </div>
+                     <div class="w-20">
+                         <label class="text-[10px] text-gray-500">Custo (Est.)</label>
+                         <input type="text" id="varCost_${v.id}" value="${formatMoney(calculateSpecificCost(v.weight, v.timeH, v.timeM))}" readonly class="w-full p-1 border rounded text-xs text-center bg-gray-100 text-gray-500">
+                     </div>
+                     <div class="w-20">
+                         <label class="text-[10px] text-gray-500">Venda R$</label>
+                         <input type="number" value="${v.price}" oninput="updateVariationData('${v.id}', 'price', this.value)" class="w-full p-1 border rounded text-xs text-center font-bold text-green-600">
+                     </div>
+                     <button onclick="removeVariation('${v.id}')" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-times"></i></button>
+                 `;
                 container.appendChild(div);
             });
         }
@@ -1062,16 +1121,13 @@
         function toggleViewMode() { viewMode = (viewMode === 'table') ? 'customer' : 'table'; const b = document.getElementById('btnViewMode'); if (viewMode === 'customer') { b.innerHTML = '<i class="fas fa-list"></i> Lista Simples'; b.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200'); } else { b.innerHTML = '<i class="fas fa-users"></i> Agrupar por Cliente'; b.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200'); } renderSalesTable(); }
         function toggleStatus(id) { const s = sales.find(x => x.id == id); if (s) { const st = ['waiting', 'printing', 'done']; s.status = st[(st.indexOf(s.status || 'waiting') + 1) % st.length]; saveData(); renderSalesTable(); } }
         function getStatusBadge(s) { s = s || 'waiting'; if (s === 'printing') return `<span class="status-badge status-printing"><i class="fas fa-cog fa-spin"></i> Produzindo</span>`; if (s === 'done') return `<span class="status-badge status-done"><i class="fas fa-cube"></i> Pronto</span>`; return `<span class="status-badge status-waiting"><i class="far fa-clock"></i> Espera</span>`; }
-        function getBudgetBadge(s) { s = s || 'pending'; if (s === 'sent') return `<span class="budget-badge budget-sent">Enviado</span>`; return `<span class="budget-badge budget-pending">Pendente</span>`; }
-
         function renderSalesTable() {
             const c = document.getElementById('salesListContainer'); c.innerHTML = ''; if (!sales.length) { document.getElementById('emptyState').classList.remove('hidden'); c.classList.add('hidden'); return; } document.getElementById('emptyState').classList.add('hidden'); c.classList.remove('hidden');
             if (viewMode === 'table') {
-                let h = `<table class="w-full text-sm text-left text-gray-500 rounded-lg overflow-hidden"><thead class="text-xs text-gray-700 uppercase bg-gray-200 sticky top-0"><tr><th class="px-4 py-3 whitespace-nowrap">Produto</th><th class="px-4 py-3 text-center">Qtd</th><th class="px-4 py-3 text-center">Orç.</th><th class="px-4 py-3 text-right">Total</th><th class="px-4 py-3 text-center">Status</th><th class="px-4 py-3 text-center">Pago</th><th class="px-4 py-3 text-center">Entregue</th><th class="px-4 py-3 text-center">Ação</th></tr></thead><tbody class="bg-white">`;
+                let h = `<table class="w-full text-sm text-left text-gray-500 rounded-lg overflow-hidden"><thead class="text-xs text-gray-700 uppercase bg-gray-200 sticky top-0"><tr><th class="px-4 py-3 whitespace-nowrap">Produto</th><th class="px-4 py-3 text-center">Qtd</th><th class="px-4 py-3 text-right">Total</th><th class="px-4 py-3 text-center">Status</th><th class="px-4 py-3 text-center">Pago</th><th class="px-4 py-3 text-center">Entregue</th><th class="px-4 py-3 text-center">Ação</th></tr></thead><tbody class="bg-white">`;
                 [...sales].sort((a, b) => b.id - a.id).forEach(s => {
                     const q = parseInt(s.qty) || 1; const t = (parseFloat(s.price) || 0) * q; const sid = String(s.id).replace(/'/g, "\\'"); const p = products.find(x => x.name === s.name); const th = (p && p.images && p.images.length > 0) ? p.images[0] : (p && p.image ? p.image : ''); const img = th ? `<img src="${th}" class="w-6 h-6 rounded border mr-1 inline-block cursor-pointer" onclick="openProductCarousel('${p ? p.id : ''}')">` : '';
-                    const warnIcon = s.warning ? `<i class="fas fa-exclamation-triangle text-yellow-500 ml-1" title="Produto não cadastrado"></i>` : '';
-                    h += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3"><div class="font-bold text-gray-800 flex items-center gap-1 flex-wrap">${s.customer || "Consumidor Final"}<button onclick="editSaleCustomer('${sid}')" class="text-[10px] text-blue-400 hover:text-blue-600"><i class="fas fa-pen"></i></button></div><div class="text-xs text-gray-500 flex items-center">${img} ${s.name} ${warnIcon} ${s.variationName ? `<span class="ml-1 bg-gray-200 px-1 rounded text-[9px]">${s.variationName}</span>` : ''}</div></td><td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-2"><button onclick="updateSaleQty('${sid}',-1)" class="qty-btn">-</button><span class="font-bold text-gray-600 w-4">${q}</span><button onclick="updateSaleQty('${sid}',1)" class="qty-btn">+</button></div></td><td class="px-4 py-3 text-center text-xs">${getBudgetBadge(s.budgetStatus)}</td><td class="px-4 py-3 text-right text-gray-800 font-medium">${formatMoney(t)}</td><td class="px-4 py-3 text-center" onclick="toggleStatus('${sid}')">${getStatusBadge(s.status)}</td><td class="px-4 py-3 text-center"><label class="cursor-pointer inline-flex items-center"><input type="checkbox" class="hidden" onchange="togglePaid('${sid}')" ${s.paid ? 'checked' : ''}><div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center transition-colors ${s.paid ? 'bg-green-500 border-green-500' : ''}">${s.paid ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}</div></label></td><td class="px-4 py-3 text-center"><button onclick="toggleDelivered('${sid}')" class="${s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400'} transition-colors" title="Entrega"><i class="fas fa-truck"></i></button></td><td class="px-4 py-3 text-center"><button onclick="deleteSale('${sid}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td></tr>`;
+                    h += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3"><div class="font-bold text-gray-800 flex items-center gap-1 flex-wrap">${s.customer || "Consumidor Final"}<button onclick="editSaleCustomer('${sid}')" class="text-[10px] text-blue-400 hover:text-blue-600"><i class="fas fa-pen"></i></button></div><div class="text-xs text-gray-500 flex items-center">${img} ${s.name} ${s.variationName ? `<span class="ml-1 bg-gray-200 px-1 rounded text-[9px]">${s.variationName}</span>` : ''}</div></td><td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-2"><button onclick="updateSaleQty('${sid}',-1)" class="qty-btn">-</button><span class="font-bold text-gray-600 w-4">${q}</span><button onclick="updateSaleQty('${sid}',1)" class="qty-btn">+</button></div></td><td class="px-4 py-3 text-right text-gray-800 font-medium">${formatMoney(t)}</td><td class="px-4 py-3 text-center" onclick="toggleStatus('${sid}')">${getStatusBadge(s.status)}</td><td class="px-4 py-3 text-center"><label class="cursor-pointer inline-flex items-center"><input type="checkbox" class="hidden" onchange="togglePaid('${sid}')" ${s.paid ? 'checked' : ''}><div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center transition-colors ${s.paid ? 'bg-green-500 border-green-500' : ''}">${s.paid ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}</div></label></td><td class="px-4 py-3 text-center"><button onclick="toggleDelivered('${sid}')" class="${s.delivered ? 'text-blue-600' : 'text-gray-300 hover:text-gray-400'} transition-colors" title="Entrega"><i class="fas fa-truck"></i></button></td><td class="px-4 py-3 text-center"><button onclick="deleteSale('${sid}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td></tr>`;
                 }); h += `</tbody></table>`; c.innerHTML = h;
             } else {
                 const g = {}; sales.forEach(s => { const c = s.customer || "Outros"; if (!g[c]) g[c] = []; g[c].push(s); });
