@@ -422,6 +422,55 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Calculadora Rápida -->
+                    <div class="bg-white p-5 rounded-lg shadow border border-yellow-200 relative">
+                        <div
+                            class="absolute top-0 right-0 bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg uppercase">
+                            Simulação Rápida</div>
+                        <h2 class="font-bold text-gray-700 mb-4 border-b pb-2 text-sm"><i
+                                class="fas fa-calculator mr-2 text-yellow-600"></i>Orçamento Rápido</h2>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 block mb-1">Filamento Utilizado</label>
+                                <select id="calcFilamentSelect" onchange="calculateCost()"
+                                    class="w-full p-2 border rounded text-sm bg-gray-50 focus:ring-2 focus:ring-yellow-400 outline-none">
+                                    <option value="">Carregando filamentos...</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-1">Peso (g)</label>
+                                    <input type="number" id="calcWeight" placeholder="Ex: 45"
+                                        class="w-full p-2 border rounded text-center text-sm" oninput="calculateCost()">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-1">Tempo (H:M:S)</label>
+                                    <div class="flex gap-1 items-center">
+                                        <input type="number" id="timeH" placeholder="H"
+                                            class="w-full p-2 border rounded text-center text-sm"
+                                            oninput="calculateCost()">
+                                        <input type="number" id="timeM" placeholder="M"
+                                            class="w-full p-2 border rounded text-center text-sm"
+                                            oninput="calculateCost()">
+                                        <input type="number" id="timeS" placeholder="S"
+                                            class="w-full p-2 border rounded text-center text-sm"
+                                            oninput="calculateCost()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="bg-gray-100 p-3 rounded border border-gray-200 flex justify-between items-center">
+                                <span class="text-xs text-gray-500">Custo Base:</span>
+                                <span id="displayTotalCost" class="font-bold text-gray-700">R$ 0,00</span>
+                            </div>
+                            <div
+                                class="bg-green-50 p-3 rounded border border-green-200 flex justify-between items-center">
+                                <span class="text-xs text-green-700 font-bold">Venda Sugerida (100%):</span>
+                                <span id="displaySuggestedPrice" class="font-bold text-green-700 text-lg">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Coluna Direita: Histórico -->
@@ -569,7 +618,7 @@
                             </div>
 
                             <button onclick="saveProduct()" id="btnSaveModel"
-                                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded transition shadow-md mt-2">
+                                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition shadow-md mt-2">
                                 Salvar Modelo
                             </button>
 
@@ -782,15 +831,19 @@
 
     <script>
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwu1W_8GWcS-b7XzQrzDpgZjFDebqtmoyj3Htc8gCQQptxufyI2hgBmFek_zrmXonpbGg/exec";
+
+        // HARDCODED DEFAULTS
+        const DEFAULT_GEMINI_KEY = "AIzaSyCcaec0WnbCV0gXtc6vKMzZNaUgQen6Yvo";
+        const DEFAULT_EXTERNAL_URL = "https://script.google.com/macros/s/AKfycbwA7ImLpK2D3oNeODv5Nr4CmTLx7TL9nBhyksMgCXA53QbSlehPttma9nR6rd02F5nwdA/exec";
+
         let products = []; let sales = []; let filaments = [];
         let settings = { filamentPrice: '', energyRate: '', printerPower: '' };
-        let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
-        let externalTableUrl = localStorage.getItem('external_table_url') || '';
+        let geminiApiKey = localStorage.getItem('gemini_api_key') || DEFAULT_GEMINI_KEY;
+        let externalTableUrl = localStorage.getItem('external_table_url') || DEFAULT_EXTERNAL_URL;
         let cloudUrl = GOOGLE_SHEETS_URL;
         let viewMode = 'table'; let viewModeModels = 'list';
         let chartFinanceInstance = null; let chartProductsInstance = null;
         let currentModelImages = [];
-        // A VARIAVEL ESTAVA AQUI E FOI REMOVIDA DA SEGUNDA DECLARAÇÃO
         let currentModelImagesLoaded = false;
         let currentVariations = [];
 
@@ -802,11 +855,11 @@
             document.getElementById('cfgPower').value = settings.printerPower;
 
             if (externalTableUrl) {
-                document.getElementById('externalUrlStatus').textContent = "Status: OK (Salvo)";
+                document.getElementById('externalUrlStatus').textContent = "Status: OK (Salva/Padrão)";
                 document.getElementById('externalSyncStatus').classList.remove('hidden');
                 setTimeout(manualSyncExternal, 2000);
             }
-            if (geminiApiKey) document.getElementById('geminiKeyStatus').textContent = "Status: OK (Salva)";
+            if (geminiApiKey) document.getElementById('geminiKeyStatus').textContent = "Status: OK (Salva/Padrão)";
 
             renderFilamentsTable(); updateFilamentDropdown(); renderFilamentOptionsForModel();
             if (cloudUrl) syncFromCloud(true); else refreshUI();
@@ -823,7 +876,7 @@
             if (url) {
                 externalTableUrl = url;
                 localStorage.setItem('external_table_url', url);
-                document.getElementById('externalUrlStatus').textContent = "Status: OK (Salvo)";
+                document.getElementById('externalUrlStatus').textContent = "Status: OK (Salva)";
                 document.getElementById('externalSyncStatus').classList.remove('hidden');
                 alert("URL Salva!");
             }
@@ -848,7 +901,8 @@
 
             showLoading("Buscando tabela externa...");
             try {
-                // Using no-cors might prevent reading response in some cases, ideally needs CORS proxy or Apps Script JSONP/CORS header
+                // Fetch external data (handling CORS if possible or relying on no-cors opaqueness if simple trigger)
+                // Note: Standard fetch might fail CORS if script not set up right. Apps Script web app needs to return ContentService.
                 const response = await fetch(externalTableUrl);
                 const textData = await response.text();
 
@@ -866,6 +920,9 @@
                 });
 
                 const aiData = await aiRes.json();
+
+                if (!aiData.candidates || !aiData.candidates[0]) throw new Error("Sem resposta da IA");
+
                 const jsonText = aiData.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
                 const newOrders = JSON.parse(jsonText);
 
@@ -1001,7 +1058,10 @@
             let fp = parseFloat(settings.filamentPrice) || 0; if (fid && fid !== 'default') { const f = filaments.find(x => x.id == fid); if (f) fp = f.price; }
             const ep = parseFloat(settings.energyRate) || 0; const pow = parseFloat(settings.printerPower) || 0;
             const mat = (fp / 1000) * w; const hrs = th + (tm / 60); const en = ((ep * pow) / 1000) * hrs; const tot = mat + en;
-            document.getElementById('regProdCost').value = tot.toFixed(2); document.getElementById('regProdEnergyCost').value = en.toFixed(4); document.getElementById('displayEnergyCost').value = en.toFixed(4); document.getElementById('calcPreviewCost').value = formatMoney(tot); document.getElementById('calcPreviewEnergy').value = formatMoney(en);
+            document.getElementById('regProdCost').value = tot.toFixed(2); document.getElementById('regProdEnergyCost').value = en.toFixed(4);
+            if (document.getElementById('displayEnergyCost')) document.getElementById('displayEnergyCost').value = en.toFixed(4);
+            if (document.getElementById('calcPreviewCost')) document.getElementById('calcPreviewCost').value = formatMoney(tot);
+            if (document.getElementById('calcPreviewEnergy')) document.getElementById('calcPreviewEnergy').value = formatMoney(en);
         }
 
         // --- VARIATIONS LOGIC ---
