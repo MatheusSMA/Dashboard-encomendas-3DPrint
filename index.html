@@ -257,6 +257,19 @@ input[type=color]{width:40px;height:30px;border:1px solid var(--line);border-rad
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;margin-right:8px;vertical-align:-2px;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #ocrBlock.drop{outline:2px dashed var(--accent);outline-offset:3px}
+.foto-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.foto-thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--line);background:var(--surface-2)}
+.foto-row .hint{flex:1 1 160px}
+.item-top{display:flex;gap:12px;align-items:flex-start;min-width:0}
+.item-top>div{display:grid;gap:8px;min-width:0;flex:1}
+.item-foto{width:76px;height:76px;border-radius:8px;object-fit:cover;border:1px solid var(--line);flex:none;background:var(--surface-2)}
+details.cost{border-top:1px dashed var(--line);padding-top:6px}
+details.cost summary{cursor:pointer;font-size:13px;color:var(--muted);list-style:none;display:flex;align-items:center;gap:6px;padding:2px 0}
+details.cost summary::-webkit-details-marker{display:none}
+details.cost summary::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+details.cost[open] summary::before{transform:rotate(45deg)}
+details.cost .kv{border:0;padding-top:6px}
+.cat-note{font-size:13px;color:var(--warn);margin:0}
 .tab .count{font-family:var(--f-mono);font-size:11.5px;opacity:.7;margin-left:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -297,6 +310,8 @@ input[type=color]{width:40px;height:30px;border:1px solid var(--line);border-rad
             <label class="field"><span>Peças na mesa</span>
               <div class="inp"><input id="cPecas" inputmode="numeric" value="1"><span class="u">un</span></div></label>
           </div>
+          <div class="foto-row" id="fotoRow"></div>
+          <input type="file" id="fotoFile" accept="image/*" hidden>
           <p class="hint">Use o peso e o tempo da mesa inteira, como o fatiador mostra. O preço sai dividido por peça. Dá para mandar o print do Bambu Handy: toque em “Ler print”, cole com Ctrl+V ou arraste a imagem aqui.</p>
         </div>
 
@@ -387,9 +402,11 @@ input[type=color]{width:40px;height:30px;border:1px solid var(--line);border-rad
           <option value="menor">Menor preço</option>
           <option value="maior">Maior preço</option>
         </select></div>
+        <button class="btn" id="btnCustos" type="button" aria-pressed="false">Mostrar custos</button>
         <button class="btn primary" id="btnCatNew" type="button">+ Nova peça</button>
       </div>
     </div>
+    <p class="cat-note" id="catNote" hidden></p>
     <div id="catList" class="catalog"><div class="loading">Carregando catálogo…</div></div>
   </section>
 
@@ -511,7 +528,7 @@ if(!Array.isArray(draft.linhas)||!draft.linhas.length) draft.linhas=freshDraft()
 const API="https://script.google.com/macros/s/AKfycbwu1W_8GWcS-b7XzQrzDpgZjFDebqtmoyj3Htc8gCQQptxufyI2hgBmFek_zrmXonpbGg/exec";
 const CACHE_KEY="g3d-cache-v1";
 let remote={products:[],sales:[],settings:{},filaments:[]};
-let pending=0, lastSync=0;
+let pending=0, lastSync=0, photosLocalOnly=false;
 
 const newId = () => String(Date.now());
 function fromRemoteFil(x){
@@ -559,6 +576,14 @@ async function refresh(silent){
 }
 /* Cada alteração: aplica na tela na hora, depois baixa a versão mais nova da planilha,
    aplica a mesma alteração por cima e salva. Assim você e outra pessoa não apagam o que o outro fez. */
+let localPhotos=lsGet("g3d-fotos",{});
+const fotoOf = p => p.foto || localPhotos[String(p.id)] || "";
+function landed(back,out){
+  const ids=a=>(a||[]).map(x=>String(x.id)).sort().join(",");
+  if(ids(back.products)!==ids(out.products) || ids(back.filaments)!==ids(out.filaments)) return false;
+  const m=new Map((back.products||[]).map(x=>[String(x.id),(x.foto||"").length]));
+  return (out.products||[]).every(x=>m.get(String(x.id))===(x.foto||"").length);
+}
 let chain=Promise.resolve();
 function commit(mutate,applyLocal=true){
   if(applyLocal){ const st={filaments,config,products}; mutate(st); filaments=st.filaments; config=st.config; products=st.products; renderAll(); }
@@ -570,7 +595,17 @@ function commit(mutate,applyLocal=true){
       const s=Object.assign({},d.settings||{},{calc:JSON.parse(JSON.stringify(st.config))});
       delete s.geminiKey;
       const out={products:st.products,sales:d.sales||[],settings:s,filaments:st.filaments.map(toRemoteFil)};
+      for(const x of out.products) if(x.foto){ localPhotos[String(x.id)]=x.foto; }
+      lsSet("g3d-fotos",localPhotos);
       await push(out);
+      let back=await pull();
+      if(!landed(back,out)){
+        // a planilha recusou (normalmente por tamanho): salva sem fotos, que ficam neste aparelho
+        out.products=out.products.map(x=>{ const {foto,...r}=x; return r; });
+        await push(out); back=await pull();
+        if(!landed(back,out)) throw new Error("recusado");
+        photosLocalOnly=true;
+      }
       pending--; lastSync=Date.now();
       if(!pending){ adopt(out); steady(); }
       return true;
@@ -749,7 +784,7 @@ $("#addLine").addEventListener("click",()=>{
 $("#btnReset").addEventListener("click",()=>{
   const fs=sortedFils(); draft=freshDraft(); draft.nome=""; draft.linhas=[{fid:fs[0]?.id||"manual",g:"",kg:"100",auto:false}];
   draft.horas=""; draft.min=""; draft.mao="0";
-  fillCalcInputs(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc(); $("#cNome").focus();
+  fillCalcInputs(); renderFoto(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc(); $("#cNome").focus();
 });
 $("#mbar").addEventListener("click",()=>$("#result").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}));
 
@@ -880,6 +915,24 @@ async function readPrint(file){
   }
   if(!out.linhas.length && out.totalG!=null) out.linhas.push({tipo:(text.match(/\b(PLA|PETG|ABS|ASA|TPU)\b/i)||[""])[0].toUpperCase(),g:out.totalG,rgb:null});
   if(out.linhas.length===1 && out.totalG!=null && out.linhas[0].g==null) out.linhas[0].g=out.totalG;
+  // foto do modelo: miniatura à esquerda do nome (Bambu Handy)
+  out.foto=null;
+  try{
+    const first=(out.nome||"").split(/\s+/)[0]; const norm=t=>String(t).replace(/[^A-Za-zÀ-ú0-9]/g,"");
+    const tw=first&&words.find(x=>norm(x.text)===norm(first));
+    if(tw && tw.bbox.x0>W*0.08){
+      const lh=tw.bbox.y1-tw.bbox.y0, my=Math.round((tw.bbox.y0+tw.bbox.y1)/2);
+      const bg=at(tw.bbox.x0-Math.max(4,lh*0.3),my);
+      const diff=c=>Math.abs(c[0]-bg[0])+Math.abs(c[1]-bg[1])+Math.abs(c[2]-bg[2])>45;
+      let xr=Math.round(tw.bbox.x0-Math.max(6,lh*0.5)); while(xr>0&&!diff(at(xr,my))) xr--;
+      let xl=xr, gap=0; while(xl>0&&gap<lh*0.4){ xl--; if(diff(at(xl,my))) gap=0; else gap++; } xl+=gap;
+      const rowHas=y=>{ for(let x=xl;x<=xr;x+=2) if(diff(at(x,y))) return true; return false; };
+      let yt=my; while(yt>0&&(rowHas(yt-1)||rowHas(yt-2))) yt--;
+      let yb=my; while(yb<H-1&&(rowHas(yb+1)||rowHas(yb+2))) yb++;
+      const bw=xr-xl, bh=yb-yt;
+      if(bw>lh*1.5 && bh>lh*1.5 && bw/bh>0.5 && bw/bh<2 && bw<W*0.5) out.foto=shrinkImage(src,xl,yt,bw,bh,120);
+    }
+  }catch(e){}
   return out;
 }
 
@@ -922,6 +975,7 @@ async function handlePrint(file){
     const r=await readPrint(file);
     const got=[];
     if(r.nome){ draft.nome=r.nome; got.push(`<b>${esc(r.nome)}</b>`); }
+    if(r.foto){ draft.foto=r.foto; got.push("foto"); }
     if(r.horas!=null){ draft.horas=String(r.horas); draft.min=String(r.min||0); got.push(`${r.horas}h${String(r.min||0).padStart(2,"0")} de impressão`); }
     const lin=r.linhas.filter(l=>l.g>0);
     if(lin.length){
@@ -936,7 +990,7 @@ async function handlePrint(file){
     if(pr){ draft.imp=pr.id; got.push(esc(pr.nome)); }
     if(!got.length){ setOcr("Não encontrei nome, tempo nem gramas nesse print. Tente um print da tela de detalhes da impressão, mais nítido, ou preencha à mão.","err"); return; }
     draft.prodId=null; draft.pecas="1";
-    fillCalcInputs(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc();
+    fillCalcInputs(); renderFoto(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc();
     const miss=[]; if(!r.nome) miss.push("nome"); if(r.horas==null) miss.push("tempo"); if(!lin.length) miss.push("gramas");
     setOcr(`<strong>Preenchido pelo print:</strong> ${got.join(" · ")}${miss.length?`<br><span class="warn-t">Não achei: ${miss.join(", ")}. Preencha à mão.</span>`:""}<br><small>Confira os campos antes de salvar.</small>`,"ok");
   }catch(e){
@@ -954,6 +1008,27 @@ const dropZone=$("#view-calculadora");
 dropZone.addEventListener("dragover",e=>{ if([...e.dataTransfer.types].includes("Files")){ e.preventDefault(); $("#ocrBlock").classList.add("drop"); } });
 dropZone.addEventListener("dragleave",e=>{ if(!dropZone.contains(e.relatedTarget)) $("#ocrBlock").classList.remove("drop"); });
 dropZone.addEventListener("drop",e=>{ const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ e.preventDefault(); $("#ocrBlock").classList.remove("drop"); handlePrint(f); } });
+
+/* foto da peça */
+function shrinkImage(source,sx,sy,sw,sh,max){
+  const k=Math.min(1,max/Math.max(sw,sh)); const c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(sw*k)); c.height=Math.max(1,Math.round(sh*k));
+  const x=c.getContext("2d"); x.imageSmoothingQuality="high"; x.drawImage(source,sx,sy,sw,sh,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",0.7);
+}
+function renderFoto(){
+  const r=$("#fotoRow");
+  r.innerHTML=draft.foto
+    ? `<img class="foto-thumb" src="${esc(draft.foto)}" alt="Foto da peça"><button class="btn small" type="button" data-f="trocar">Trocar foto</button><button class="btn small danger" type="button" data-f="remover">Remover</button>`
+    : `<button class="btn small ghost" type="button" data-f="trocar">+ Foto da peça</button><span class="hint">Aparece no catálogo. O “Ler print” já pega a foto do Bambu Handy.</span>`;
+}
+$("#fotoRow").addEventListener("click",e=>{ const b=e.target.closest("[data-f]"); if(!b) return; if(b.dataset.f==="trocar") $("#fotoFile").click(); else { draft.foto=""; renderFoto(); recalc(); } });
+$("#fotoFile").addEventListener("change",async e=>{
+  const f=e.target.files&&e.target.files[0]; e.target.value=""; if(!f) return;
+  try{ const img=await fileToImage(f); const side=Math.min(img.naturalWidth,img.naturalHeight);
+    draft.foto=shrinkImage(img,(img.naturalWidth-side)/2,(img.naturalHeight-side)/2,side,side,120); renderFoto(); recalc(); }
+  catch(err){ toast("Não consegui abrir essa imagem."); }
+});
 
 /* ---------- catálogo ---------- */
 const prodById = id => products.find(p=>String(p.id)===String(id));
@@ -977,10 +1052,11 @@ function saveToCatalog(asNew){
   if(!draft.nome.trim()){ toast("Dê um nome para a peça antes de salvar."); $("#cNome").focus(); return; }
   const editing=!asNew && draft.prodId && prodById(draft.prodId);
   const id=editing?prodById(draft.prodId).id:Date.now();
-  const snap=snapshot();
+  const snap=snapshot(); const foto=draft.foto||"";
   commit(st=>{
     const i=st.products.findIndex(p=>String(p.id)===String(id));
     const prod=productFrom(id,clone(snap),i>=0?st.products[i]:null);
+    if(foto) prod.foto=foto; else { delete prod.foto; delete localPhotos[String(id)]; lsSet("g3d-fotos",localPhotos); }
     if(i>=0) st.products[i]=prod; else st.products.push(prod);
   });
   draft.prodId=String(id); recalc();
@@ -1006,6 +1082,7 @@ const fmtTime = h => { const H=Math.floor(h), M=Math.round((h-H)*60); return H? 
 let catBusca="", catOrdem=lsGet("g3d-cat-ordem","recentes");
 function renderCatalog(){
   $("#catCount").textContent=products.length?String(products.length):"";
+  const n=$("#catNote"); n.hidden=!photosLocalOnly; if(photosLocalOnly) n.textContent="A planilha chegou no limite de tamanho, então as fotos novas ficaram salvas só neste aparelho. Os preços estão salvos normalmente.";
   const list=$("#catList");
   if(!loaded){ list.innerHTML=`<div class="loading">Carregando catálogo…</div>`; return; }
   if(!products.length){ list.innerHTML=`<div class="empty" style="grid-column:1/-1"><strong>Catálogo vazio</strong><span>Monte o preço de uma peça na calculadora e toque em “Salvar no catálogo”.</span><button class="btn primary" type="button" data-act="calc">Ir para a calculadora</button></div>`; return; }
@@ -1025,14 +1102,19 @@ function renderCatalog(){
     const mats=fils.map(x=>x.f?`<span class="mat"><i style="background:${esc(x.f.cor)}"></i>${esc(x.f.nome)} · ${gfmt(x.g/pecas)} g</span>`:`<span class="mat"><i></i>Outro · ${gfmt(x.g/pecas)} g</span>`).join("");
     const lucro=p.lucro!=null?parseNum(p.lucro)/pecas:(price-parseNum(p.cost));
     const drift=p.calc && Math.abs(r.unit-price)>=0.01;
+    const foto=fotoOf(p); const k=String(p.id);
     return `<article class="item${String(p.id)===String(draft.prodId)?" current":""}" data-id="${esc(String(p.id))}">
       <div class="item-band">${band}</div>
       <div class="item-body">
-        <div class="item-head"><h3>${esc(p.name||"Sem nome")}</h3><span class="item-date">${esc(fmtDate(p.atualizado||p.criado||Number(p.id)))}</span></div>
-        <div class="item-price">${esc(fmt(price))}<small>${pecas>1?"por peça":""}</small></div>
+        <div class="item-top">${foto?`<img class="item-foto" src="${esc(foto)}" alt="" loading="lazy">`:""}<div>
+          <div class="item-head"><h3>${esc(p.name||"Sem nome")}</h3><span class="item-date">${esc(fmtDate(p.atualizado||p.criado||Number(p.id)))}</span></div>
+          <div class="item-price">${esc(fmt(price))}<small>${pecas>1?"por peça":""}</small></div>
+        </div></div>
         <div class="item-meta">${gfmt(parseNum(p.weight))} g · ${esc(fmtTime(parseNum(p.timeH)+parseNum(p.timeM)/60))}${pecas>1?` · mesa com ${pecas}`:""}</div>
         ${mats?`<div class="mats">${mats}</div>`:""}
-        <dl class="kv"><dt>Custo por peça</dt><dd>${esc(fmt(parseNum(p.cost)))}</dd><dt>Você ganha por peça</dt><dd class="${lucro>=0?"pos":"neg"}">${esc(fmt(lucro))}</dd></dl>
+        <details class="cost" data-k="${esc(k)}"${showCosts||openCosts.has(k)?" open":""}><summary>Custo e lucro</summary>
+          <dl class="kv"><dt>Custo por peça</dt><dd>${esc(fmt(parseNum(p.cost)))}</dd><dt>Você ganha por peça</dt><dd class="${lucro>=0?"pos":"neg"}">${esc(fmt(lucro))}</dd></dl>
+        </details>
         ${drift?`<div class="drift"><span>Com os preços de hoje: <b>${esc(fmt(r.unit))}</b></span><button class="btn small" type="button" data-act="update">Atualizar preço</button></div>`:""}
       </div>
       <div class="item-actions">
@@ -1043,9 +1125,14 @@ function renderCatalog(){
     </article>`;
   }).join("");
 }
+let showCosts=!!lsGet("g3d-custos",false); const openCosts=new Set();
+$("#catList").addEventListener("toggle",e=>{ const d=e.target; if(d.matches&&d.matches("details.cost")){ if(d.open) openCosts.add(d.dataset.k); else openCosts.delete(d.dataset.k); } },true);
+function syncCostBtn(){ const b=$("#btnCustos"); b.setAttribute("aria-pressed",String(showCosts)); b.textContent=showCosts?"Esconder custos":"Mostrar custos"; }
+$("#btnCustos").addEventListener("click",()=>{ showCosts=!showCosts; lsSet("g3d-custos",showCosts); openCosts.clear(); syncCostBtn(); renderCatalog(); });
+syncCostBtn();
 function openProduct(p){
-  draft=Object.assign(freshDraft(),clone(calcOf(p)),{nome:p.name||"",prodId:String(p.id)});
-  fillCalcInputs(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc();
+  draft=Object.assign(freshDraft(),clone(calcOf(p)),{nome:p.name||"",prodId:String(p.id),foto:fotoOf(p)||""});
+  fillCalcInputs(); renderFoto(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc();
   go("calculadora"); window.scrollTo(0,0);
 }
 const catDelArmed=new Set();
@@ -1227,7 +1314,7 @@ function renderAll(){
   autoAssignLines();
   renderLines(); renderFilaments(); renderCatalog(); recalc();
 }
-fillCalcInputs(); renderPrinterSelect(); renderMarkupChips(); renderSettings(); renderLines(); renderFilaments(); renderCatalog(); recalc();
+fillCalcInputs(); renderFoto(); renderPrinterSelect(); renderMarkupChips(); renderSettings(); renderLines(); renderFilaments(); renderCatalog(); recalc();
 go(location.hash.slice(1)||"calculadora",false);
 initStore();
 })();
