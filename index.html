@@ -248,6 +248,15 @@ input[type=color]{width:40px;height:30px;border:1px solid var(--line);border-rad
   .cat-tools{width:100%}
   .cat-tools .inp{width:auto;flex:1 1 150px}
 }
+.ocr-status{font-size:13.5px;line-height:1.55;border-radius:8px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line)}
+.ocr-status[data-s="ok"]{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.ocr-status[data-s="err"]{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));color:var(--bad)}
+.ocr-status small{color:var(--muted)}
+.warn-t{color:var(--warn)}
+.sw-mini{display:inline-block;width:11px;height:11px;border-radius:50%;border:1px solid var(--line);margin-right:5px;vertical-align:-1px}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;margin-right:8px;vertical-align:-2px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#ocrBlock.drop{outline:2px dashed var(--accent);outline-offset:3px}
 .tab .count{font-family:var(--f-mono);font-size:11.5px;opacity:.7;margin-left:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -276,15 +285,19 @@ input[type=color]{width:40px;height:30px;border:1px solid var(--line);border-rad
   <section class="view" id="view-calculadora" role="tabpanel" aria-labelledby="tab-calculadora">
     <div class="calc-grid">
       <div class="inputs">
-        <div class="block">
-          <div class="block-h"><h2>Peça</h2></div>
+        <div class="block" id="ocrBlock">
+          <div class="block-h"><h2>Peça</h2>
+            <button class="btn small" id="btnOcr" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/></svg>Ler print da impressão</button>
+            <input type="file" id="ocrFile" accept="image/*" hidden>
+          </div>
+          <div class="ocr-status" id="ocrStatus" hidden></div>
           <div class="row">
             <label class="field" style="grid-column:span 2"><span>Nome da peça (vai no orçamento)</span>
               <div class="inp"><input id="cNome" placeholder="Ex.: Suporte de headset" autocomplete="off"></div></label>
             <label class="field"><span>Peças na mesa</span>
               <div class="inp"><input id="cPecas" inputmode="numeric" value="1"><span class="u">un</span></div></label>
           </div>
-          <p class="hint">Use o peso e o tempo da mesa inteira, como o fatiador mostra. O preço sai dividido por peça.</p>
+          <p class="hint">Use o peso e o tempo da mesa inteira, como o fatiador mostra. O preço sai dividido por peça. Dá para mandar o print do Bambu Handy: toque em “Ler print”, cole com Ctrl+V ou arraste a imagem aqui.</p>
         </div>
 
         <div class="block">
@@ -757,6 +770,190 @@ function copyText(txt){
   try{ navigator.clipboard.writeText(txt).then(()=>{ fb.hidden=true; toast("Orçamento copiado. É só colar no WhatsApp."); },showFb); }catch(e){ showFb(); }
 }
 $("#btnCopy").addEventListener("click",()=>copyText(quoteText(draft,compute())));
+
+/* ---------- leitor de print (OCR no navegador, Tesseract.js) ---------- */
+const OCR_SRC="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+let ocrWorker=null, ocrLoading=null;
+function loadScript(src){ return new Promise((ok,err)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=()=>err(new Error("script")); document.head.appendChild(s); }); }
+async function getWorker(onProgress){
+  if(ocrWorker) return ocrWorker;
+  if(!ocrLoading) ocrLoading=(async()=>{
+    if(!window.Tesseract) await loadScript(OCR_SRC);
+    const w=await Tesseract.createWorker("por",1,{logger:m=>{ if(m.status==="recognizing text"&&ocrProgress) ocrProgress(m.progress); }});
+    ocrWorker=w; return w;
+  })();
+  try{ return await ocrLoading; }catch(e){ ocrLoading=null; throw e; }
+}
+let ocrProgress=null;
+function fileToImage(file){ return new Promise((ok,err)=>{ const u=URL.createObjectURL(file); const i=new Image(); i.onload=()=>{ ok(i); }; i.onerror=()=>err(new Error("img")); i.src=u; }); }
+const lum=(r,g,b)=>r*.3+g*.59+b*.11;
+function flatWords(data){ const out=[]; for(const bl of data.blocks||[]) for(const pa of bl.paragraphs||[]) for(const li of pa.lines||[]) for(const w of li.words||[]) out.push(w); return out; }
+function median(a){ a=a.slice().sort((x,y)=>x-y); return a.length?a[a.length>>1]:0; }
+async function readPrint(file){
+  const img=await fileToImage(file);
+  const k=img.naturalWidth<1200?2:1;
+  const W=img.naturalWidth*k, H=img.naturalHeight*k;
+  const src=document.createElement("canvas"); src.width=W; src.height=H;
+  const sx=src.getContext("2d",{willReadFrequently:true}); sx.imageSmoothingQuality="high"; sx.drawImage(img,0,0,W,H);
+  const px=sx.getImageData(0,0,W,H).data;
+  const at=(x,y)=>{ const i=(Math.max(0,Math.min(H-1,y|0))*W+Math.max(0,Math.min(W-1,x|0)))*4; return [px[i],px[i+1],px[i+2]]; };
+  // texto escuro em fundo claro para o OCR
+  let sum=0; for(let i=0;i<px.length;i+=16) sum+=lum(px[i],px[i+1],px[i+2]);
+  const dark=sum/(px.length/16)<128;
+  const pre=document.createElement("canvas"); pre.width=W; pre.height=H;
+  const pctx=pre.getContext("2d"); const g=sx.getImageData(0,0,W,H);
+  for(let i=0;i<g.data.length;i+=4){ let l=lum(g.data[i],g.data[i+1],g.data[i+2]); if(dark) l=255-l; g.data[i]=g.data[i+1]=g.data[i+2]=l; }
+  pctx.putImageData(g,0,0);
+  const w=await getWorker();
+  await w.setParameters({tessedit_pageseg_mode:"3"});
+  const r=await w.recognize(pre,{},{text:true,blocks:true});
+  const text=r.data.text||"";
+  const words=flatWords(r.data);
+  const out={text, nome:"", horas:null, min:null, linhas:[], totalG:null, impressora:""};
+
+  const lines=text.split("\n").map(s=>s.trim()).filter(Boolean);
+  const clean=s=>s.replace(/^([^A-Za-zÀ-ú0-9]*\S{0,2}\s+)+(?=[A-Za-zÀ-ú0-9]{3})/,"").replace(/[^A-Za-zÀ-ú0-9)]+$/,"").trim();
+  // nome (Bambu Handy: linha depois de "Detalhes de impressão")
+  const di=lines.findIndex(l=>/detalhes\s+d[ae]\s+impress/i.test(l));
+  if(di>=0){
+    const rest=lines.slice(di+1).filter(l=>/[A-Za-zÀ-ú]{3}/.test(l));
+    const t=rest[0]?clean(rest[0]):"";
+    const v=rest.find(l=>/vers[aã]o/i.test(l));
+    const vv=v?v.slice(v.search(/vers[aã]o/i)).replace(/^vers[aã]o\s*/i,"").replace(/\s*[-–—]+\s*/g," – ").replace(/[^A-Za-zÀ-ú0-9)]+$/,"").trim():"";
+    out.nome=t+(vv?` (${vv})`:"");
+  }
+  // tempo: início e fim "11/04/2026 13:41 - 11/04/2026 15:13"
+  const ts=[...text.matchAll(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/g)];
+  if(ts.length>=2){
+    const [a,b]=ts; let m=(+b[4]*60+ +b[5])-(+a[4]*60+ +a[5]);
+    const da=Date.UTC(+a[3],+a[2]-1,+a[1]), db=Date.UTC(+b[3],+b[2]-1,+b[1]);
+    const days=Math.round((db-da)/864e5);
+    if(days>=0&&days<=7) m+=days*1440; else if(m<0) m+=1440;
+    if(m<0) m+=1440;
+    if(m>0){ out.horas=Math.floor(m/60); out.min=m%60; }
+  }
+  if(out.horas==null){
+    let mm=text.match(/(\d+)\s*h\s*(\d{1,2})\s*m/i);
+    if(mm){ out.horas=+mm[1]; out.min=+mm[2]; }
+    else if((mm=text.match(/(\d+)[,.](\d+)\s*h\b/i))){ const h=parseFloat(mm[1]+"."+mm[2]); out.horas=Math.floor(h); out.min=Math.round((h-Math.floor(h))*60); }
+    else if((mm=text.match(/(\d+)\s*min/i))){ out.horas=0; out.min=+mm[1]; }
+    else if((mm=text.match(/(\d+)\s*h\b/i))){ out.horas=+mm[1]; out.min=0; }
+  }
+  // impressora
+  const il=lines.find(l=>/impressora|printer/i.test(l));
+  if(il) out.impressora=il.replace(/.*?(impressora|printer)\s*/i,"");
+  // gramas totais
+  const fl=lines.find(l=>/filamentos?\b/i.test(l)&&/\d/.test(l));
+  if(fl){ const mm=fl.match(/(\d+(?:[.,]\d+)?)\s*(g)?/i); if(mm){ let v=mm[1]; if(!mm[2]&&/9$/.test(v)&&v.length>1&&!/[.,]/.test(v)) v=v.slice(0,-1); out.totalG=parseFloat(v.replace(",",".")); } }
+  if(out.totalG==null){ const mm=text.match(/(\d+(?:[.,]\d+)?)\s*g\b/i); if(mm) out.totalG=parseFloat(mm[1].replace(",",".")); }
+
+  // chips de filamento abaixo da palavra "Filamentos": rótulo branco "PLA | 28g" + faixa colorida
+  const fw=words.find(x=>/^filamentos?$/i.test(x.text));
+  if(fw){
+    const lh=fw.bbox.y1-fw.bbox.y0;
+    const y0=fw.bbox.y1+2, yMax=Math.min(H-1,fw.bbox.y1+lh*6);
+    const minRun=Math.max(30,W*0.06);
+    const runsAt=y=>{ const runs=[]; let s=-1; for(let x=0;x<W;x++){ const c=at(x,y); const white=lum(...c)>225; if(white&&s<0) s=x; if((!white||x===W-1)&&s>=0){ if(x-s>=minRun) runs.push([s,x]); s=-1; } } return runs; };
+    let top=-1; for(let y=y0;y<yMax;y++){ if(runsAt(y).length){ top=y; break; } }
+    if(top>=0){
+      const runs=runsAt(Math.min(yMax,top+2));
+      await w.setParameters({tessedit_pageseg_mode:"7"});
+      for(const [x0,x1] of runs){
+        // fundo do rótulo: desce pela margem esquerda (sem texto) enquanto for branco
+        const ex=x0+Math.max(3,(x1-x0)*0.04); let bot=top; while(bot<yMax&&lum(...at(ex,bot+1))>215) bot++;
+        const lblH=bot-top; if(lblH<8) continue;
+        // cor: faixa logo abaixo do rótulo
+        const ys=bot+Math.max(4,lblH*0.5); const R=[],G=[],B=[];
+        for(let x=x0+(x1-x0)*0.12;x<x1-(x1-x0)*0.12;x+=2){ for(const dy of [-2,0,2]){ const c=at(x,ys+dy); R.push(c[0]);G.push(c[1]);B.push(c[2]); } }
+        const rgb=[median(R),median(G),median(B)];
+        // texto do rótulo
+        const c=document.createElement("canvas"); const pad=4; c.width=(x1-x0)*2; c.height=(lblH+pad*2)*2;
+        const cx=c.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,c.width,c.height);
+        cx.drawImage(src,x0,top-pad,x1-x0,lblH+pad*2,0,0,c.width,c.height);
+        const lr=await w.recognize(c);
+        const lt=(lr.data.text||"").trim();
+        const mt=lt.match(/([A-Za-z+ ]{2,12}?)\s*[|lI!]\s*(\d+(?:[.,]\d+)?)\s*[g9]?/);
+        out.linhas.push({tipo:mt?mt[1].trim().toUpperCase():(lt.match(/PLA|PETG|ABS|ASA|TPU|PA|PC/i)||[""])[0].toUpperCase(), g:mt?parseFloat(mt[2].replace(",",".")):null, rgb, label:lt});
+      }
+      await w.setParameters({tessedit_pageseg_mode:"3"});
+    }
+  }
+  if(!out.linhas.length && out.totalG!=null) out.linhas.push({tipo:(text.match(/\b(PLA|PETG|ABS|ASA|TPU)\b/i)||[""])[0].toUpperCase(),g:out.totalG,rgb:null});
+  if(out.linhas.length===1 && out.totalG!=null && out.linhas[0].g==null) out.linhas[0].g=out.totalG;
+  return out;
+}
+
+/* aplicar o print na calculadora */
+function colorDist(a,b){ const rm=(a[0]+b[0])/2, dr=a[0]-b[0], dg=a[1]-b[1], db=a[2]-b[2]; return Math.sqrt((2+rm/256)*dr*dr+4*dg*dg+(2+(255-rm)/256)*db*db)/3; }
+function hexRgb(h){ const m=String(h||"").replace("#","").match(/^([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i); return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:null; }
+function matchFilament(tipo,rgb){
+  const T=String(tipo||"").toUpperCase().replace(/\s+/g," ").trim();
+  let best=null;
+  for(const f of filaments){
+    const ft=String(f.tipo||"").toUpperCase();
+    const fam=T&&ft? (ft===T?0:(ft.split(" ")[0].replace("+","")===T.split(" ")[0].replace("+","")?25:160)) : 40;
+    const c=hexRgb(f.cor); const d=rgb&&c?colorDist(rgb,c):60;
+    const score=d+fam;
+    if(!best||score<best.score) best={f,score,d};
+  }
+  return best;
+}
+function matchPrinter(txt){
+  const norm=s=>String(s||"").toLowerCase().replace(/[il|!]/g,"1");
+  const t=norm(txt); if(!t) return null;
+  let best=null,bs=0;
+  for(const p of config.impressoras){
+    const toks=norm(p.nome).split(/[^a-z0-9]+/).filter(x=>x.length>=2);
+    const sc=toks.reduce((s,k)=>s+(t.includes(k)?k.length:0),0);
+    if(sc>bs){ bs=sc; best=p; }
+  }
+  return best;
+}
+const rgbHex = c => "#"+c.map(v=>Math.round(v).toString(16).padStart(2,"0")).join("");
+function setOcr(html,state){ const el=$("#ocrStatus"); el.hidden=!html; el.dataset.s=state||""; el.innerHTML=html||""; }
+let ocrBusy=false;
+async function handlePrint(file){
+  if(!file||!/^image\//.test(file.type)){ setOcr("Esse arquivo não é uma imagem. Envie um print (PNG ou JPG).","err"); return; }
+  if(ocrBusy) return; ocrBusy=true;
+  $("#btnOcr").disabled=true;
+  setOcr(`<span class="spin" aria-hidden="true"></span>Lendo o print… <span id="ocrPct"></span><br><small>Na primeira vez demora um pouco mais, porque o leitor precisa ser baixado.</small>`,"busy");
+  ocrProgress=p=>{ const e=$("#ocrPct"); if(e) e.textContent=Math.round(p*100)+"%"; };
+  try{
+    const r=await readPrint(file);
+    const got=[];
+    if(r.nome){ draft.nome=r.nome; got.push(`<b>${esc(r.nome)}</b>`); }
+    if(r.horas!=null){ draft.horas=String(r.horas); draft.min=String(r.min||0); got.push(`${r.horas}h${String(r.min||0).padStart(2,"0")} de impressão`); }
+    const lin=r.linhas.filter(l=>l.g>0);
+    if(lin.length){
+      draft.linhas=lin.map(l=>{
+        const m=filaments.length?matchFilament(l.tipo,l.rgb):null;
+        const sw=l.rgb?`<i class="sw-mini" style="background:${rgbHex(l.rgb)}"></i>`:"";
+        if(m){ got.push(`${sw}${esc(l.tipo||"Filamento")} ${num1.format(l.g)} g → ${esc(m.f.nome)}${m.d>90?' <span class="warn-t">(cor diferente, confira)</span>':""}`); return {fid:m.f.id,g:String(l.g),kg:"100",auto:false}; }
+        got.push(`${sw}${esc(l.tipo||"Filamento")} ${num1.format(l.g)} g`); return {fid:"manual",g:String(l.g),kg:"100",auto:false};
+      });
+    }
+    const pr=matchPrinter(r.impressora);
+    if(pr){ draft.imp=pr.id; got.push(esc(pr.nome)); }
+    if(!got.length){ setOcr("Não encontrei nome, tempo nem gramas nesse print. Tente um print da tela de detalhes da impressão, mais nítido, ou preencha à mão.","err"); return; }
+    draft.prodId=null; draft.pecas="1";
+    fillCalcInputs(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc();
+    const miss=[]; if(!r.nome) miss.push("nome"); if(r.horas==null) miss.push("tempo"); if(!lin.length) miss.push("gramas");
+    setOcr(`<strong>Preenchido pelo print:</strong> ${got.join(" · ")}${miss.length?`<br><span class="warn-t">Não achei: ${miss.join(", ")}. Preencha à mão.</span>`:""}<br><small>Confira os campos antes de salvar.</small>`,"ok");
+  }catch(e){
+    setOcr("Não consegui ler o print. Verifique a internet (o leitor é baixado na primeira vez) e tente de novo.","err");
+  }finally{ ocrBusy=false; $("#btnOcr").disabled=false; ocrProgress=null; }
+}
+$("#btnOcr").addEventListener("click",()=>$("#ocrFile").click());
+$("#ocrFile").addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=""; if(f) handlePrint(f); });
+document.addEventListener("paste",e=>{
+  if($("#view-calculadora").hidden) return;
+  const it=[...(e.clipboardData&&e.clipboardData.items||[])].find(i=>i.type.startsWith("image/"));
+  if(it){ e.preventDefault(); handlePrint(it.getAsFile()); }
+});
+const dropZone=$("#view-calculadora");
+dropZone.addEventListener("dragover",e=>{ if([...e.dataTransfer.types].includes("Files")){ e.preventDefault(); $("#ocrBlock").classList.add("drop"); } });
+dropZone.addEventListener("dragleave",e=>{ if(!dropZone.contains(e.relatedTarget)) $("#ocrBlock").classList.remove("drop"); });
+dropZone.addEventListener("drop",e=>{ const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f){ e.preventDefault(); $("#ocrBlock").classList.remove("drop"); handlePrint(f); } });
 
 /* ---------- catálogo ---------- */
 const prodById = id => products.find(p=>String(p.id)===String(id));
