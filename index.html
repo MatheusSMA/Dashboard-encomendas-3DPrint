@@ -123,6 +123,16 @@ main{padding-block:24px 96px}
 .btn.small{padding:6px 10px;font-size:13px}
 
 /* margin slider */
+.seg{display:inline-flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px;max-width:100%;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 14px;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.fixo-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fixo-row .inp{width:200px;max-width:100%}
+.fixo-row .inp input{font-family:var(--f-display);font-size:20px;font-weight:600;padding:7px 10px}
+.fixo-info{font-size:13.5px;margin:0}
+.fixo-info.neg{color:var(--bad)}
+.tag{font-family:var(--f-mono);font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);vertical-align:middle;margin-left:6px;font-weight:500;letter-spacing:0}
+.cmp tr.fixed td{color:var(--accent);font-weight:600;cursor:default}
 .markup{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:14px;align-items:center}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -365,12 +375,26 @@ details.cost .kv{border:0;padding-top:6px}
         </div>
 
         <div class="block">
-          <div class="block-h"><h2>Lucro</h2><span class="hint">em cima do custo</span></div>
-          <div class="markup">
-            <input type="range" id="cMarkupR" min="0" max="400" step="5" value="100" aria-label="Lucro em porcentagem">
-            <div class="inp"><input id="cMarkup" inputmode="numeric" value="100"><span class="u">%</span></div>
+          <div class="block-h"><h2>Lucro e preço</h2>
+            <div class="seg" id="modoSeg" role="group" aria-label="Como definir o preço">
+              <button type="button" data-modo="pct" aria-pressed="true">% de lucro</button>
+              <button type="button" data-modo="fixo" aria-pressed="false">Preço que eu escolho</button>
+            </div>
           </div>
-          <div class="chips" id="markupChips"></div>
+          <div id="modoPct" style="display:grid;gap:14px">
+            <div class="markup">
+              <input type="range" id="cMarkupR" min="0" max="400" step="5" value="100" aria-label="Lucro em porcentagem">
+              <div class="inp"><input id="cMarkup" inputmode="numeric" value="100"><span class="u">%</span></div>
+            </div>
+            <div class="chips" id="markupChips"></div>
+            <p class="hint">Porcentagem em cima do custo. O preço é arredondado conforme os Ajustes.</p>
+          </div>
+          <div id="modoFixo" style="display:grid;gap:10px" hidden>
+            <div class="fixo-row">
+              <label class="field"><span>Preço por peça</span><div class="inp"><span class="u pre">R$</span><input id="cFixo" inputmode="decimal" placeholder="0,00"></div></label>
+            </div>
+            <p class="fixo-info" id="fixoInfo"></p>
+          </div>
         </div>
       </div>
 
@@ -542,7 +566,7 @@ let products = [];
 let loaded = false;
 
 const DRAFT_KEY="g3d-draft-v1";
-const freshDraft = () => ({nome:"",pecas:"1",linhas:[{fid:"",g:"85",kg:"100",auto:true}],horas:"3",min:"20",imp:"",mao:"15",extras:"0",markup:null});
+const freshDraft = () => ({nome:"",pecas:"1",linhas:[{fid:"",g:"85",kg:"100",auto:true}],horas:"3",min:"20",imp:"",mao:"15",extras:"0",markup:null,modo:"pct",precoFixo:""});
 let draft = Object.assign(freshDraft(), lsGet(DRAFT_KEY,{}));
 if(!Array.isArray(draft.linhas)||!draft.linhas.length) draft.linhas=freshDraft().linhas;
 
@@ -697,6 +721,12 @@ function compute(markupOverride,d){
   const mao=Math.max(0,parseNum(d.mao))/60*parseNum(config.maoHora);
   const ext=Math.max(0,parseNum(d.extras));
   const custo=base+fal+mao+ext;
+  const t0=Math.min(0.95,(parseNum(config.imposto)+parseNum(config.taxa))/100);
+  if(markupOverride==null && isFixo(d)){
+    const unit=Math.round(parseNum(d.precoFixo)*100)/100, total=unit*pecas, tax=total*t0, luc=total-tax-custo;
+    return {pecas,horas,gramas,fil,ene,maq,fal,mao,ext,custo,luc,tax,total,unit,markup:custo>0?luc/custo*100:0,fixo:true,
+      margemCusto: custo>0?luc/custo*100:0, margemVenda: total>0?luc/total*100:0};
+  }
   const markup=markupOverride!=null?markupOverride:currentMarkup(d);
   const lucroAlvo=custo*markup/100;
   const liquido=custo+lucroAlvo;
@@ -709,6 +739,7 @@ function compute(markupOverride,d){
   return {pecas,horas,gramas,fil,ene,maq,fal,mao,ext,custo,luc,tax,total,unit,markup,
     margemCusto: custo>0?luc/custo*100:0, margemVenda: total>0?luc/total*100:0};
 }
+function isFixo(d){ return d && d.modo==="fixo" && parseNum(d.precoFixo)>0; }
 function currentMarkup(d){ d=d||draft; return d.markup==null||d.markup===""? parseNum(config.markup) : Math.max(0,parseNum(d.markup)); }
 
 const PARTS=[["fil","Filamento","--c-fil"],["ene","Energia","--c-ene"],["maq","Desgaste da impressora","--c-maq"],["fal","Margem de falha","--c-fal"],["mao","Seu tempo","--c-mao"],["ext","Extras","--c-ext"],["luc","Lucro","--c-luc"],["tax","Impostos e taxas","--c-tax"]];
@@ -727,9 +758,12 @@ function renderResult(){
   const tot=PARTS.reduce((s,[k])=>s+Math.max(0,r[k]),0)||1;
   $("#rBar").innerHTML=PARTS.map(([k,n,c])=>`<span title="${esc(n)}: ${esc(fmt(r[k]))}" style="width:${Math.max(0,r[k])/tot*100}%;background:var(${c})"></span>`).join("");
   $("#rLegend").innerHTML=PARTS.map(([k,n,c],i)=>`<li class="${r[k]<=0.004?"zero":""}${k==="luc"?" sep":""}"><i style="background:var(${c})"></i><span>${esc(n)}</span><span class="v">${esc(fmt(r[k]))}</span><span class="p">${pct(Math.max(0,r[k])/tot*100)}</span></li>`).join("");
-  const opts=[50,100,150,200,300]; const cur=r.markup;
-  if(!opts.includes(cur)) opts.push(cur); opts.sort((a,b)=>a-b);
-  $("#rCmp").innerHTML=opts.map(m=>{ const x=compute(m); return `<tr data-m="${m}" class="${m===cur?"on":""}"><td>${pct(m)}</td><td>${esc(fmt(x.unit))}</td><td>${esc(fmt(x.total))}</td><td>${esc(fmt(x.luc))}</td></tr>`; }).join("");
+  const opts=[50,100,150,200,300]; const cur=r.fixo?null:r.markup;
+  if(cur!=null&&!opts.includes(cur)) opts.push(cur); opts.sort((a,b)=>a-b);
+  const fi=$("#fixoInfo");
+  if(r.fixo){ const lp=r.luc/r.pecas; fi.className="fixo-info"+(lp<0?" neg":""); fi.textContent=lp<0?`Abaixo do custo: você perde ${fmt(-lp)} por peça. O custo é ${fmt(r.custo/r.pecas)}.`:`Você ganha ${fmt(lp)} por peça, ${pct(r.margemCusto)} em cima do custo de ${fmt(r.custo/r.pecas)}.`; }
+  else if(draft.modo==="fixo"){ fi.className="fixo-info"; fi.textContent=`Digite o preço. O custo por peça é ${fmt(r.custo/r.pecas)}.`; }
+  $("#rCmp").innerHTML=(r.fixo?`<tr class="fixed"><td>Seu preço</td><td>${esc(fmt(r.unit))}</td><td>${esc(fmt(r.total))}</td><td>${esc(fmt(r.luc))}</td></tr>`:"")+opts.map(m=>{ const x=compute(m); return `<tr data-m="${m}" class="${m===cur?"on":""}"><td>${pct(m)}</td><td>${esc(fmt(x.unit))}</td><td>${esc(fmt(x.total))}</td><td>${esc(fmt(x.luc))}</td></tr>`; }).join("");
   return r;
 }
 
@@ -770,6 +804,10 @@ function renderPrinterSelect(){
   sel.innerHTML=config.impressoras.map(p=>`<option value="${esc(p.id)}" ${p.id===draft.imp?"selected":""}>${esc(p.nome)} · ${num0.format(parseNum(p.potencia))} W</option>`).join("");
 }
 function renderMarkupChips(){
+  const fx=draft.modo==="fixo";
+  document.querySelectorAll("#modoSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.modo===(fx?"fixo":"pct"))));
+  $("#modoPct").hidden=fx; $("#modoFixo").hidden=!fx;
+  if(document.activeElement!==$("#cFixo")) $("#cFixo").value=draft.precoFixo?fmtIn(parseNum(draft.precoFixo)):"";
   const m=currentMarkup();
   $("#cMarkup").value=fmtIn(m); $("#cMarkupR").value=Math.min(400,m);
   $("#markupChips").innerHTML=[50,100,150,200,300].map(v=>`<button type="button" class="chip" data-m="${v}" aria-pressed="${v===m}">${v}%</button>`).join("");
@@ -792,7 +830,13 @@ $("#cImp").addEventListener("change",e=>{ draft.imp=e.target.value; recalc(); })
 $("#cMarkup").addEventListener("input",e=>{ draft.markup=e.target.value; $("#cMarkupR").value=Math.min(400,parseNum(e.target.value)); document.querySelectorAll("#markupChips .chip").forEach(c=>c.setAttribute("aria-pressed",String(+c.dataset.m===currentMarkup()))); recalc(); });
 $("#cMarkupR").addEventListener("input",e=>{ draft.markup=e.target.value; renderMarkupChips(); recalc(); });
 $("#markupChips").addEventListener("click",e=>{ const b=e.target.closest(".chip"); if(!b) return; draft.markup=b.dataset.m; renderMarkupChips(); recalc(); });
-$("#rCmp").addEventListener("click",e=>{ const tr=e.target.closest("tr[data-m]"); if(!tr) return; draft.markup=tr.dataset.m; renderMarkupChips(); recalc(); });
+$("#rCmp").addEventListener("click",e=>{ const tr=e.target.closest("tr[data-m]"); if(!tr) return; draft.markup=tr.dataset.m; draft.modo="pct"; renderMarkupChips(); recalc(); });
+$("#modoSeg").addEventListener("click",e=>{
+  const b=e.target.closest("[data-modo]"); if(!b) return;
+  if(b.dataset.modo==="fixo" && draft.modo!=="fixo"){ if(!(parseNum(draft.precoFixo)>0)) draft.precoFixo=String(compute(currentMarkup()).unit); draft.modo="fixo"; renderMarkupChips(); recalc(); const i=$("#cFixo"); i.focus(); i.select(); }
+  else if(b.dataset.modo==="pct"){ draft.modo="pct"; renderMarkupChips(); recalc(); }
+});
+$("#cFixo").addEventListener("input",e=>{ draft.precoFixo=String(parseNum(e.target.value)||""); recalc(); });
 $("#filLines").addEventListener("input",e=>{
   const row=e.target.closest(".fil-line"); if(!row||e.target.tagName==="SELECT") return;
   const l=draft.linhas[+row.dataset.i]; l[e.target.dataset.k]=e.target.value;
@@ -1064,7 +1108,7 @@ $("#fotoFile").addEventListener("change",async e=>{
 const prodById = id => products.find(p=>String(p.id)===String(id));
 const clone = o => JSON.parse(JSON.stringify(o));
 function snapshot(){
-  return {nome:draft.nome.trim(),pecas:draft.pecas,linhas:clone(draft.linhas).map(l=>Object.assign(l,{auto:false})),horas:draft.horas,min:draft.min,imp:draft.imp,mao:draft.mao,extras:draft.extras,markup:String(currentMarkup())};
+  return {nome:draft.nome.trim(),pecas:draft.pecas,linhas:clone(draft.linhas).map(l=>Object.assign(l,{auto:false})),horas:draft.horas,min:draft.min,imp:draft.imp,mao:draft.mao,extras:draft.extras,markup:String(currentMarkup()),modo:draft.modo==="fixo"&&isFixo(draft)?"fixo":"pct",precoFixo:draft.precoFixo||""};
 }
 function productFrom(id,snap,prev){
   const r=compute(null,snap);
@@ -1157,7 +1201,7 @@ function renderCatalog(){
       <div class="item-body">
         <div class="item-top">${foto?`<img class="item-foto" src="${esc(foto)}" alt="" loading="lazy" data-act="openq">`:""}<div>
           <div class="item-head"><h3 data-act="openq" title="Editar">${esc(p.name||"Sem nome")}</h3><span class="item-date">${esc(fmtDate(p.atualizado||p.criado||Number(p.id)))}</span></div>
-          <div class="item-price">${esc(fmt(price))}<small>${pecas>1?"por peça":""}</small></div>
+          <div class="item-price">${esc(fmt(price))}<small>${pecas>1?"por peça":""}</small>${c.modo==="fixo"?`<span class="tag">preço fixo</span>`:""}</div>
         </div></div>
         <div class="item-meta">${gfmt(parseNum(p.weight))} g · ${esc(fmtTime(parseNum(p.timeH)+parseNum(p.timeM)/60))}${pecas>1?` · mesa com ${pecas}`:""}</div>
         ${mats?`<div class="mats">${mats}</div>`:""}
