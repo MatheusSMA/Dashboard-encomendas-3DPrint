@@ -83,11 +83,31 @@ main{padding-block:24px 96px}
 
 /* filament lines */
 .fil-lines{display:grid;gap:10px}
-.fil-line{display:grid;grid-template-columns:28px minmax(0,1fr) 130px 36px;gap:10px;align-items:center}
-.fil-line.manual{grid-template-columns:28px minmax(0,1fr) 130px 130px 36px}
-.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);background:var(--sw,#999);position:relative}
-.dot::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--surface)}
-.line-note{grid-column:2/-1;font-size:12.5px;margin-top:-4px;color:var(--muted)}
+.fil-line{display:grid;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);min-width:0}
+.line-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.line-label{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.line-sel{display:flex;align-items:center;gap:8px;flex:1 1 160px;min-width:0;font-size:14px}
+.line-sel i{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);flex:none;background:var(--c)}
+.line-sel b{font-weight:600;overflow-wrap:anywhere}
+.line-sel span{color:var(--muted);font-size:12.5px;font-family:var(--f-mono)}
+.line-head .g{width:120px;flex:none;background:var(--surface)}
+.picks{display:flex;flex-wrap:wrap;gap:6px}
+.pick{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 10px 4px 4px;font-size:13px;cursor:pointer;max-width:100%}
+.pick i{width:20px;height:20px;border-radius:50%;background:var(--c,transparent);border:1px solid var(--line);flex:none}
+.pick i.any{background:conic-gradient(#e8590c,#f5c400,#2f9e44,#1971c2,#7950f2,#e8590c)}
+.pick:hover{border-color:var(--ink)}
+.pick[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);font-weight:600}
+.mk-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mk-row .inp{width:170px;background:var(--surface)}
+.line-note{font-size:12.5px;color:var(--muted);margin:0}
+.add-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.edit-bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:15;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:12px 14px}
+.edit-bar .who{display:flex;align-items:center;gap:10px;min-width:0}
+.edit-bar .who img{width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--line)}
+.edit-bar .who small{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.edit-bar .who b{overflow-wrap:anywhere}
+.edit-actions{display:flex;flex-wrap:wrap;gap:8px}
+.item-top img,.item h3{cursor:pointer}
 .line-note.warn{color:var(--warn)}
 .icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--muted);display:grid;place-items:center;font-size:18px;line-height:1}
 .icon-btn:hover{color:var(--bad);border-color:var(--bad)}
@@ -163,9 +183,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   .mbar span{font-size:12px;opacity:.75}
 }
 @media (max-width:520px){
-  .fil-line,.fil-line.manual{grid-template-columns:28px minmax(0,1fr) 36px}
-  .fil-line .g,.fil-line .mk{grid-column:2/3}
-  .fil-line .icon-btn{grid-row:1;grid-column:3}
+  .line-head .g{flex:1 1 100px}
   .markup{grid-template-columns:minmax(0,1fr)}
 }
 
@@ -296,6 +314,14 @@ details.cost .kv{border:0;padding-top:6px}
 <main class="wrap">
   <!-- CALCULADORA -->
   <section class="view" id="view-calculadora" role="tabpanel" aria-labelledby="tab-calculadora">
+    <div class="edit-bar" id="editBar" hidden>
+      <div class="who"><span id="editThumb"></span><div><small>Editando item do catálogo</small><b id="editName"></b></div></div>
+      <div class="edit-actions">
+        <button class="btn primary" id="ebSave" type="button">Salvar alterações</button>
+        <button class="btn" id="ebNew" type="button">Salvar como item novo</button>
+        <button class="btn ghost" id="ebCancel" type="button">Sair sem salvar</button>
+      </div>
+    </div>
     <div class="calc-grid">
       <div class="inputs">
         <div class="block" id="ocrBlock">
@@ -318,7 +344,7 @@ details.cost .kv{border:0;padding-top:6px}
         <div class="block">
           <div class="block-h"><h2>Filamento</h2><span class="hint">peso total do fatiador (com suporte e purga)</span></div>
           <div class="fil-lines" id="filLines"></div>
-          <div><button class="btn ghost small" id="addLine" type="button">+ Outra cor / material</button></div>
+          <div class="add-row"><button class="btn" id="addLine" type="button">+ Adicionar cor</button><span class="hint">Peça com mais de uma cor (AMS/CFS): uma linha para cada cor, com os gramas de cada uma.</span></div>
         </div>
 
         <div class="block">
@@ -375,7 +401,6 @@ details.cost .kv{border:0;padding-top:6px}
 
         <div class="panel">
           <div class="actions">
-            <p class="editing" id="editingNote" hidden></p>
             <button class="btn primary full" id="btnSaveCat" type="button">Salvar no catálogo</button>
             <button class="btn full small" id="btnSaveNew" type="button" hidden>Salvar como item novo</button>
             <button class="btn" id="btnCopy" type="button">Copiar orçamento</button>
@@ -708,25 +733,33 @@ function renderResult(){
   return r;
 }
 
+function lineNote(f,g){
+  if(!f) return "";
+  const est=parseNum(f.estoque);
+  return g>est?`<span class="warn-t">Só tem ${num0.format(est)} g desse rolo no estoque.</span>`:`${num0.format(est)} g em estoque`;
+}
 function renderLines(){
   const fs=sortedFils();
   const box=$("#filLines");
+  const many=draft.linhas.length>1;
   box.innerHTML=draft.linhas.map((l,i)=>{
     const f=l.fid&&l.fid!=="manual"?filById(l.fid):null;
     const manual=!f;
-    const opts=fs.map(x=>`<option value="${esc(x.id)}" ${x.id===l.fid?"selected":""}>${esc(x.nome)}${x.marca?" · "+esc(x.marca):""} — ${esc(fmt(precoKg(x)))}/kg</option>`).join("")
-      +`<option value="manual" ${manual?"selected":""}>Outro (digitar preço por kg)</option>`;
     const g=parseNum(l.g);
-    let note="";
-    if(f){ const est=parseNum(f.estoque); note = g>est?`<div class="line-note warn">Só tem ${num0.format(est)} g desse rolo no estoque.</div>`:`<div class="line-note">${esc(f.tipo||"")} · ${esc(fmt(precoKg(f)/1000))} por grama · ${num0.format(est)} g em estoque</div>`; }
-    else if(!fs.length) note=`<div class="line-note">Cadastre seus rolos na aba Filamentos para escolher aqui.</div>`;
-    return `<div class="fil-line${manual?" manual":""}" data-i="${i}">
-      <span class="dot" style="--sw:${esc(f?f.cor:"var(--muted)")}"></span>
-      <div class="inp"><select data-k="fid" aria-label="Filamento ${i+1}">${opts}</select></div>
-      ${manual?`<div class="inp mk"><span class="u pre">R$</span><input data-k="kg" inputmode="decimal" value="${esc(l.kg)}" aria-label="Preço por kg"><span class="u">/kg</span></div>`:""}
-      <div class="inp g"><input data-k="g" inputmode="decimal" value="${esc(l.g)}" aria-label="Gramas"><span class="u">g</span></div>
-      <button class="icon-btn" type="button" data-del="${i}" aria-label="Remover linha" ${draft.linhas.length<2?"disabled":""}>×</button>
-      ${note}
+    const sel=f?`<i style="--c:${esc(f.cor)}"></i><b>${esc(f.nome)}</b><span>${esc(f.tipo?f.tipo+" · ":"")}${esc(fmt(precoKg(f)/1000))}/g</span>`
+               :`<i class="any" style="--c:transparent;background:conic-gradient(#e8590c,#f5c400,#2f9e44,#1971c2,#7950f2,#e8590c)"></i><b>Outro filamento</b>`;
+    const picks=fs.map(x=>`<button type="button" class="pick" data-fid="${esc(x.id)}" aria-pressed="${x.id===l.fid}" style="--c:${esc(x.cor)}" title="${esc(x.nome)} · ${esc(fmt(precoKg(x)))}/kg"><i></i>${esc(x.nome)}</button>`).join("")
+      +`<button type="button" class="pick" data-fid="manual" aria-pressed="${manual}"><i class="any"></i>Outro</button>`;
+    return `<div class="fil-line" data-i="${i}">
+      <div class="line-head">
+        ${many?`<span class="line-label">Cor ${i+1}</span>`:""}
+        <div class="line-sel">${sel}</div>
+        <div class="inp g"><input data-k="g" inputmode="decimal" value="${esc(l.g)}" aria-label="Gramas da cor ${i+1}" placeholder="0"><span class="u">g</span></div>
+        ${many?`<button class="icon-btn" type="button" data-del="${i}" aria-label="Remover cor ${i+1}">×</button>`:""}
+      </div>
+      <div class="picks" role="group" aria-label="Escolher filamento da cor ${i+1}">${picks}</div>
+      ${manual?`<div class="mk-row"><div class="inp mk"><span class="u pre">R$</span><input data-k="kg" inputmode="decimal" value="${esc(l.kg)}" aria-label="Preço por kg"><span class="u">/kg</span></div><span class="hint">${fs.length?"Preço do kg desse filamento":"Cadastre seus rolos na aba Filamentos para escolher aqui"}</span></div>`:""}
+      ${f?`<p class="line-note">${lineNote(f,g)}</p>`:""}
     </div>`;
   }).join("");
 }
@@ -763,22 +796,19 @@ $("#rCmp").addEventListener("click",e=>{ const tr=e.target.closest("tr[data-m]")
 $("#filLines").addEventListener("input",e=>{
   const row=e.target.closest(".fil-line"); if(!row||e.target.tagName==="SELECT") return;
   const l=draft.linhas[+row.dataset.i]; l[e.target.dataset.k]=e.target.value;
-  if(e.target.dataset.k==="g"){ const f=filById(l.fid); const note=row.querySelector(".line-note"); if(f&&note){ const est=parseNum(f.estoque); if(parseNum(l.g)>est){ note.className="line-note warn"; note.textContent=`Só tem ${num0.format(est)} g desse rolo no estoque.`; } else { note.className="line-note"; note.textContent=`${f.tipo||""} · ${fmt(precoKg(f)/1000)} por grama · ${num0.format(est)} g em estoque`; } } }
+  if(e.target.dataset.k==="g"){ const f=filById(l.fid); const note=row.querySelector(".line-note"); if(f&&note) note.innerHTML=lineNote(f,parseNum(l.g)); }
   recalc();
 });
-$("#filLines").addEventListener("change",e=>{
-  if(e.target.tagName!=="SELECT") return;
-  const row=e.target.closest(".fil-line"); const l=draft.linhas[+row.dataset.i];
-  l.fid=e.target.value; l.auto=false; renderLines(); recalc();
-});
 $("#filLines").addEventListener("click",e=>{
+  const pk=e.target.closest(".pick");
+  if(pk){ const row=pk.closest(".fil-line"); const l=draft.linhas[+row.dataset.i]; l.fid=pk.dataset.fid; l.auto=false; renderLines(); recalc(); return; }
   const b=e.target.closest("[data-del]"); if(!b||b.disabled) return;
   draft.linhas.splice(+b.dataset.del,1); renderLines(); recalc();
 });
 $("#addLine").addEventListener("click",()=>{
   const fs=sortedFils(); const used=new Set(draft.linhas.map(l=>l.fid));
   const next=fs.find(f=>!used.has(f.id))||fs[0];
-  draft.linhas.push({fid:next?next.id:"manual",g:"10",kg:"100",auto:false}); renderLines(); recalc();
+  draft.linhas.push({fid:next?next.id:"manual",g:"",kg:"100",auto:false}); renderLines(); recalc();
   const ins=$("#filLines").querySelectorAll('input[data-k="g"]'); ins[ins.length-1]?.focus();
 });
 $("#btnReset").addEventListener("click",()=>{
@@ -1066,11 +1096,30 @@ $("#btnSaveCat").addEventListener("click",()=>saveToCatalog(false));
 $("#btnSaveNew").addEventListener("click",()=>saveToCatalog(true));
 function renderSaveBtns(){
   const p=draft.prodId&&prodById(draft.prodId);
-  $("#btnSaveCat").textContent=p?"Atualizar no catálogo":"Salvar no catálogo";
+  $("#btnSaveCat").textContent=p?"Salvar alterações":"Salvar no catálogo";
   $("#btnSaveNew").hidden=!p;
-  const n=$("#editingNote"); n.hidden=!p;
-  if(p) n.innerHTML=`Editando <b>${esc(p.name||"sem nome")}</b> do catálogo`;
+  $("#editBar").hidden=!p;
+  if(p){
+    $("#editName").textContent=draft.nome.trim()||p.name||"Sem nome";
+    const f=draft.foto||fotoOf(p);
+    $("#editThumb").innerHTML=f?`<img src="${esc(f)}" alt="">`:"";
+  }
 }
+function finishEdit(asNew){
+  if(!draft.nome.trim()){ toast("Dê um nome para a peça antes de salvar."); $("#cNome").focus(); return; }
+  saveToCatalog(asNew); const id=draft.prodId;
+  draft=freshDraft(); draft.linhas=[{fid:sortedFils()[0]?.id||"manual",g:"",kg:"100",auto:false}];
+  fillCalcInputs(); renderFoto(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc();
+  go("catalogo"); window.scrollTo(0,0);
+  const card=document.querySelector(`.item[data-id="${CSS.escape(String(id))}"]`); if(card){ card.classList.add("current"); card.scrollIntoView({block:"nearest"}); }
+}
+$("#ebSave").addEventListener("click",()=>finishEdit(false));
+$("#ebNew").addEventListener("click",()=>finishEdit(true));
+$("#ebCancel").addEventListener("click",()=>{
+  draft=freshDraft(); draft.linhas=[{fid:sortedFils()[0]?.id||"manual",g:"",kg:"100",auto:false}];
+  fillCalcInputs(); renderFoto(); renderPrinterSelect(); renderLines(); renderMarkupChips(); recalc();
+  go("catalogo"); window.scrollTo(0,0);
+});
 function calcOf(p){
   if(p.calc&&Array.isArray(p.calc.linhas)) return p.calc;
   const fid=p.filamentId!=null&&filById(String(p.filamentId))?String(p.filamentId):"manual";
@@ -1106,8 +1155,8 @@ function renderCatalog(){
     return `<article class="item${String(p.id)===String(draft.prodId)?" current":""}" data-id="${esc(String(p.id))}">
       <div class="item-band">${band}</div>
       <div class="item-body">
-        <div class="item-top">${foto?`<img class="item-foto" src="${esc(foto)}" alt="" loading="lazy">`:""}<div>
-          <div class="item-head"><h3>${esc(p.name||"Sem nome")}</h3><span class="item-date">${esc(fmtDate(p.atualizado||p.criado||Number(p.id)))}</span></div>
+        <div class="item-top">${foto?`<img class="item-foto" src="${esc(foto)}" alt="" loading="lazy" data-act="openq">`:""}<div>
+          <div class="item-head"><h3 data-act="openq" title="Editar">${esc(p.name||"Sem nome")}</h3><span class="item-date">${esc(fmtDate(p.atualizado||p.criado||Number(p.id)))}</span></div>
           <div class="item-price">${esc(fmt(price))}<small>${pecas>1?"por peça":""}</small></div>
         </div></div>
         <div class="item-meta">${gfmt(parseNum(p.weight))} g · ${esc(fmtTime(parseNum(p.timeH)+parseNum(p.timeM)/60))}${pecas>1?` · mesa com ${pecas}`:""}</div>
@@ -1118,7 +1167,7 @@ function renderCatalog(){
         ${drift?`<div class="drift"><span>Com os preços de hoje: <b>${esc(fmt(r.unit))}</b></span><button class="btn small" type="button" data-act="update">Atualizar preço</button></div>`:""}
       </div>
       <div class="item-actions">
-        <button class="btn small" type="button" data-act="open">Abrir na calculadora</button>
+        <button class="btn small primary" type="button" data-act="open">Editar</button>
         <button class="btn small" type="button" data-act="copy">Copiar orçamento</button>
         <button class="btn small danger" type="button" data-act="del">Excluir</button>
       </div>
@@ -1142,6 +1191,7 @@ $("#catList").addEventListener("click",e=>{
   const card=b.closest("[data-id]"); const p=card&&prodById(card.dataset.id); if(!p) return;
   const act=b.dataset.act;
   if(act==="open") openProduct(p);
+  if(act==="openq") openProduct(p);
   if(act==="copy"){ const c=calcOf(p); const pecas=Math.max(1,parseNum(p.pecas)||1); copyText(quoteText(Object.assign({},c,{nome:p.name}),{pecas,unit:parseNum(p.price),total:parseNum(p.price)*pecas})); }
   if(act==="update"){ commit(st=>{ const i=st.products.findIndex(x=>String(x.id)===String(p.id)); if(i>=0) st.products[i]=productFrom(st.products[i].id,clone(calcOf(st.products[i])),st.products[i]); }); }
   if(act==="del"){
